@@ -17,6 +17,8 @@ export default function BooksemApp() {
   const [fontSize, setFontSize] = useState(18); // px
 
   const audioRef = useRef(null);
+  const [selectedBookId, setSelectedBookId] = useState('1');
+  const ttsTimer = useRef(null);
 
   const sampleBooks = [
     {
@@ -165,6 +167,137 @@ export default function BooksemApp() {
     }
   ];
 
+
+  const BOOK_TEXT = {
+    "The Art of War": {
+      "chapter": "Chapter 1: Laying Plans",
+      "paragraphs": [
+        "Sun Tzu said: The art of war is of vital importance to the State. It is a matter of life and death, a road either to safety or to ruin. Hence it is a subject of inquiry which can on no account be neglected.",
+        "The art of war, then, is governed by five constant factors, to be taken into account in one’s deliberations, when seeking to determine the conditions obtaining in the field. These are: The Moral Law; Heaven; Earth; The Commander; Method and discipline.",
+        "The Moral Law causes the people to be in complete accord with their ruler, so that they will follow him regardless of their lives, undismayed by any danger.",
+        "Heaven signifies night and day, cold and heat, times and seasons. Earth comprises distances, great and small; danger and security; open ground and narrow passes; the chances of life and death.",
+        "The Commander stands for the virtues of wisdom, sincerely, benevolence, courage and strictness. By method and discipline are to be understood the marshaling of the army in its proper subdivisions, the graduations of rank among the officers, the maintenance of roads by which supplies may reach the army, and the control of military expenditure.",
+        "These five heads should be familiar to every general: he who knows them will be victorious; he who knows them not will fail.",
+        "All warfare is based on deception. Hence, when able to attack, we must seem unable; when using our forces, we must seem inactive; when we are near, we must make the enemy believe we are far away; when far away, we must make him believe we are near.",
+        "Hold out baits to entice the enemy. Feign disorder, and crush him. If he is secure at all points, be prepared for him. If he is in superior strength, evade him."
+      ]
+    },
+    "Think and Grow Rich": {
+      "chapter": "Chapter 1: Thoughts Are Things",
+      "paragraphs": [
+        "Truly, thoughts are things, and powerful things at that, when they are mixed with definiteness of purpose, persistence, and a burning desire for their translation into riches, or other material objects.",
+        "A little more than thirty years ago, Edwin C. Barnes discovered how true it is that men really do think and grow rich. His discovery did not come about at one sitting. It came little by little, beginning with a burning desire to become a business associate of the great Edison."
+      ]
+    },
+    "Meditations": {
+      "chapter": "Book One",
+      "paragraphs": [
+        "From my grandfather Verus I learned good morals and the government of my temper.",
+        "From the reputation and remembrance of my father, modesty and a manly character. From my mother, piety and beneficence, and abstinence, not only from evil deeds, but even from evil thoughts; and further, simplicity in my way of living, far removed from the habits of the rich."
+      ]
+    },
+    "Pride and Prejudice": {
+      "chapter": "Chapter 1",
+      "paragraphs": [
+        "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
+        "However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
+      ]
+    },
+    "The Prince": {
+      "chapter": "Chapter 1: How Many Kinds of Principalities There Are",
+      "paragraphs": [
+        "All states, all powers, that have held and hold rule over men have been and are either republics or principalities.",
+        "Principalities are either hereditary, in which the family has been long established; or they are new. The new are either entirely new, or they are, as it were, members annexed to the hereditary state of the prince who has acquired them."
+      ]
+    },
+    "Frankenstein": {
+      "chapter": "Letter 1",
+      "paragraphs": [
+        "You will rejoice to hear that no disaster has accompanied the commencement of an enterprise which you have regarded with such evil forebodings. I arrived here yesterday, and my first task is to assure my dear sister of my welfare and increasing confidence in the success of my undertaking.",
+        "I am already far north of London, and as I walk in the streets of Petersburgh, I feel a cold northern breeze play upon my cheeks, which braces my nerves and fills me with delight."
+      ]
+    },
+    "The Science of Getting Rich": {
+      "chapter": "Chapter 1: The Right to Be Rich",
+      "paragraphs": [
+        "Whatever may be said in praise of poverty, the fact remains that it is not possible to live a really complete or successful life unless one is rich.",
+        "No man can rise to his greatest possible height in talent or soul development unless he has plenty of money; for to unfold the soul and to develop talent he must have many things to use, and he cannot have these things unless he has money to buy them with."
+      ]
+    },
+    "Dracula": {
+      "chapter": "Chapter 1: Jonathan Harker's Journal",
+      "paragraphs": [
+        "Left Munich at 8:35 P.M., on 1st May, arriving at Vienna early next morning; should have arrived at 6:46, but train was an hour late.",
+        "Buda-Pesth seems a wonderful place, from the glimpse which I got of it from the train and the little I could walk through the streets. I feared to go very far from the station, as we had arrived late and would start as near the correct time as possible."
+      ]
+    },
+    "The Great Gatsby": {
+      "chapter": "Chapter 1",
+      "paragraphs": [
+        "In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.",
+        "Whenever you feel like criticizing any one, he told me, just remember that all the people in this world haven't had the advantages that you've had."
+      ]
+    },
+    "A Tale of Two Cities": {
+      "chapter": "Book the First, Chapter 1: The Period",
+      "paragraphs": [
+        "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was the spring of hope, it was the winter of despair.",
+        "We had everything before us, we had nothing before us, we were all going direct to Heaven, we were all going direct the other way."
+      ]
+    },
+    "The Picture of Dorian Gray": {
+      "chapter": "Chapter 1",
+      "paragraphs": [
+        "The studio was filled with the rich odour of roses, and when the light summer wind stirred amidst the trees of the garden, there came through the open door the heavy scent of the lilac, or the more delicate perfume of the pink-flowering thorn.",
+        "From the corner of the divan of Persian saddle-bags on which he was lying, smoking, as was his custom, innumerable cigarettes, Lord Henry Wotton could just catch the gleam of the honey-sweet and long-blossoming laburnum."
+      ]
+    },
+    "The Prophet": {
+      "chapter": "The Coming of the Ship",
+      "paragraphs": [
+        "Almustafa, the chosen and the beloved, who was a dawn unto his own day, had waited twelve years in the city of Orphalese for his ship that was to return and bear him back to the isle of his birth.",
+        "And in the twelfth year, on the seventh day of Ielool, the month of reaping, he climbed the hill without the city walls and looked seaward; and he beheld his ship coming with the mist."
+      ]
+    }
+  };
+  const selectedBook = sampleBooks.find((b) => b.id === selectedBookId) || sampleBooks[0];
+  const bookText = BOOK_TEXT[selectedBook.title] || { chapter: 'Preview', paragraphs: [selectedBook.description] };
+  const audioSrc = selectedBook.title === 'The Art of War'
+    ? 'https://archive.org/download/art_of_war_librivox/art_of_war_01-02_sun_tzu_64kb.mp3'
+    : null;
+
+  const stopAll = () => {
+    if (audioRef.current) { audioRef.current.pause(); }
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (ttsTimer.current) { clearInterval(ttsTimer.current); ttsTimer.current = null; }
+    setIsPlayingAudio(false);
+    setCurrentTime(0);
+    setDuration(0);
+  };
+
+  const openBook = (id) => {
+    stopAll();
+    setSelectedBookId(id);
+    setActiveTab('reader');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const speakBook = () => {
+    if (!window.speechSynthesis) { alert('Your browser does not support read-aloud.'); return; }
+    const text = selectedBook.title + ', by ' + selectedBook.author + '. ' + bookText.chapter + '. ' + bookText.paragraphs.join(' ');
+    const words = text.split(/\s+/).length;
+    const est = (words / 2.6) / playbackRate;
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = playbackRate;
+    u.onend = () => { if (ttsTimer.current) clearInterval(ttsTimer.current); ttsTimer.current = null; setIsPlayingAudio(false); setCurrentTime(est); };
+    window.speechSynthesis.cancel();
+    setDuration(est); setCurrentTime(0);
+    window.speechSynthesis.speak(u);
+    setIsPlayingAudio(true);
+    const start = Date.now();
+    ttsTimer.current = setInterval(() => setCurrentTime(Math.min(est, (Date.now() - start) / 1000)), 250);
+  };
+
   // Format seconds to mm:ss
   const formatTime = (secs) => {
     if (isNaN(secs) || !secs) return '00:00';
@@ -175,6 +308,10 @@ export default function BooksemApp() {
 
   // Toggle Audio Play / Pause
   const togglePlay = () => {
+    if (!audioSrc) {
+      if (isPlayingAudio) { stopAll(); } else { speakBook(); }
+      return;
+    }
     if (!audioRef.current) return;
     if (isPlayingAudio) {
       audioRef.current.pause();
@@ -191,7 +328,7 @@ export default function BooksemApp() {
 
   // Seek bar click
   const handleSeek = (e) => {
-    if (!audioRef.current || !duration) return;
+    if (!audioSrc || !audioRef.current || !duration) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const newTime = (clickX / rect.width) * duration;
@@ -217,7 +354,7 @@ export default function BooksemApp() {
       {/* 1. TOP NAVIGATION */}
       <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('marketplace')}>
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { stopAll(); setActiveTab('marketplace'); }}>
             <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-amber-500/20">
               <BookOpen className="w-6 h-6" />
             </div>
@@ -230,7 +367,7 @@ export default function BooksemApp() {
 
           <nav className="hidden md:flex items-center space-x-1">
             <button
-              onClick={() => setActiveTab('marketplace')}
+              onClick={() => { stopAll(); setActiveTab('marketplace'); }}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
                 activeTab === 'marketplace' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
               }`}
@@ -300,7 +437,7 @@ export default function BooksemApp() {
                 </p>
                 <div className="flex items-center space-x-4">
                   <button 
-                    onClick={() => setActiveTab('reader')}
+                    onClick={() => openBook('1')}
                     className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-3 rounded-xl transition flex items-center shadow-lg shadow-amber-500/20"
                   >
                     <Headphones className="w-5 h-5 mr-2" />
@@ -373,13 +510,13 @@ export default function BooksemApp() {
                         </div>
                         <div className="flex space-x-2">
                           <button 
-                            onClick={() => setActiveTab('reader')}
+                            onClick={() => openBook(book.id)}
                             className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold"
                           >
                             Preview
                           </button>
                           <button 
-                            onClick={() => setActiveTab('reader')}
+                            onClick={() => openBook(book.id)}
                             className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-lg text-xs font-bold transition"
                           >
                             {book.price === 0 ? 'Read / Listen' : 'Buy Now'}
@@ -426,8 +563,8 @@ export default function BooksemApp() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-white">The Art of War</h1>
-                <p className="text-slate-400 text-sm">Author: Sun Tzu | Narrated by: Audio Classics (LibriVox Public Domain)</p>
+                <h1 className="text-2xl font-bold text-white">{selectedBook.title}</h1>
+                <p className="text-slate-400 text-sm">Author: {selectedBook.author} | Narrated by: {audioSrc ? 'Audio Classics (LibriVox Public Domain)' : 'Read-aloud voice'}</p>
               </div>
               <div className="flex space-x-2">
                 <button 
@@ -452,7 +589,8 @@ export default function BooksemApp() {
               {/* Invisible HTML5 Audio Element */}
               <audio
                 ref={audioRef}
-                src="https://archive.org/download/art_of_war_librivox/art_of_war_01-02_sun_tzu_64kb.mp3"
+                key={selectedBook.id}
+                src={audioSrc || undefined}
                 onTimeUpdate={() => audioRef.current && setCurrentTime(audioRef.current.currentTime)}
                 onLoadedMetadata={() => audioRef.current && setDuration(audioRef.current.duration)}
                 onEnded={() => setIsPlayingAudio(false)}
@@ -511,31 +649,8 @@ export default function BooksemApp() {
                 className="font-serif text-slate-200 leading-loose space-y-6"
                 style={{ fontSize: `${fontSize}px` }}
               >
-                <h2 className="text-2xl font-bold font-sans text-center text-amber-400 mb-8">Chapter 1: Laying Plans</h2>
-                <p>
-                  Sun Tzu said: The art of war is of vital importance to the State. It is a matter of life and death, a road either to safety or to ruin. Hence it is a subject of inquiry which can on no account be neglected.
-                </p>
-                <p>
-                  The art of war, then, is governed by five constant factors, to be taken into account in one’s deliberations, when seeking to determine the conditions obtaining in the field. These are: The Moral Law; Heaven; Earth; The Commander; Method and discipline.
-                </p>
-                <p>
-                  The Moral Law causes the people to be in complete accord with their ruler, so that they will follow him regardless of their lives, undismayed by any danger.
-                </p>
-                <p>
-                  Heaven signifies night and day, cold and heat, times and seasons. Earth comprises distances, great and small; danger and security; open ground and narrow passes; the chances of life and death.
-                </p>
-                <p>
-                  The Commander stands for the virtues of wisdom, sincerely, benevolence, courage and strictness. By method and discipline are to be understood the marshaling of the army in its proper subdivisions, the graduations of rank among the officers, the maintenance of roads by which supplies may reach the army, and the control of military expenditure.
-                </p>
-                <p>
-                  These five heads should be familiar to every general: he who knows them will be victorious; he who knows them not will fail.
-                </p>
-                <p>
-                  All warfare is based on deception. Hence, when able to attack, we must seem unable; when using our forces, we must seem inactive; when we are near, we must make the enemy believe we are far away; when far away, we must make him believe we are near.
-                </p>
-                <p>
-                  Hold out baits to entice the enemy. Feign disorder, and crush him. If he is secure at all points, be prepared for him. If he is in superior strength, evade him.
-                </p>
+                <h2 className="text-2xl font-bold font-sans text-center text-amber-400 mb-8">{bookText.chapter}</h2>
+                {bookText.paragraphs.map((p, i) => (<p key={i}>{p}</p>))}
               </div>
             </div>
           </div>
