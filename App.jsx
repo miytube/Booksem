@@ -235,21 +235,21 @@ export default function BooksemApp() {
         ['Chapter 14 Part 1: How to Outwit the Six Ghosts of Fear', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2014%20Part%201.mp3']
       ];
     })(),
-    '3': (() => {
+        '3': (() => {
       const base = 'https://archive.org/download/meditations_0708_librivox/';
       return [
-        ['Book 1: Debts and Lessons from Family', base + 'meditations_01_aurelius_64kb.mp3'],
-        ['Book 2: On the River Gran, Among the Quadi', base + 'meditations_02_aurelius_64kb.mp3'],
-        ['Book 3: In Carnuntum', base + 'meditations_03_aurelius_64kb.mp3'],
-        ['Book 4: The Inner Citadel', base + 'meditations_04_aurelius_64kb.mp3'],
-        ['Book 5: At Daybreak — Rising to Duty', base + 'meditations_05_aurelius_64kb.mp3'],
-        ['Book 6: Reason and the Whole', base + 'meditations_06_aurelius_64kb.mp3'],
-        ['Book 7: Transient Things and the Soul', base + 'meditations_07_aurelius_64kb.mp3'],
-        ['Book 8: Contentment in Any Station', base + 'meditations_08_aurelius_64kb.mp3'],
-        ['Book 9: Injustice as Impiety', base + 'meditations_09_aurelius_64kb.mp3'],
-        ['Book 10: Perfection of the Rational Animal', base + 'meditations_10_aurelius_64kb.mp3'],
-        ['Book 11: Integrity and Goodwill', base + 'meditations_11_aurelius_64kb.mp3'],
-        ['Book 12: Farewell in Peace and Grace', base + 'meditations_12_aurelius_64kb.mp3']
+        ['Book 1: Debts and Lessons from Family', base + 'meditations_01_marcusaurelius.mp3'],
+        ['Book 2: On the River Gran, Among the Quadi', base + 'meditations_02_marcusaurelius.mp3'],
+        ['Book 3: In Carnuntum', base + 'meditations_03_marcusaurelius.mp3'],
+        ['Book 4: The Inner Citadel', base + 'meditations_04_marcusaurelius.mp3'],
+        ['Book 5: At Daybreak — Rising to Duty', base + 'meditations_05_marcusaurelius.mp3'],
+        ['Book 6: Reason and the Whole', base + 'meditations_06_marcusaurelius.mp3'],
+        ['Book 7: Transient Things and the Soul', base + 'meditations_07_marcusaurelius.mp3'],
+        ['Book 8: Contentment in Any Station', base + 'meditations_08_marcusaurelius.mp3'],
+        ['Book 9: Injustice as Impiety', base + 'meditations_09_marcusaurelius.mp3'],
+        ['Book 10: Perfection of the Rational Animal', base + 'meditations_10_marcusaurelius.mp3'],
+        ['Book 11: Integrity and Goodwill', base + 'meditations_11_marcusaurelius.mp3'],
+        ['Book 12: Farewell in Peace and Grace', base + 'meditations_12_marcusaurelius.mp3']
       ];
     })(),
     '4': (() => {
@@ -274,17 +274,15 @@ export default function BooksemApp() {
       ];
     })(),
     '5': (() => {
-      const base = 'https://archive.org/download/prince_librivox/';
+      const base = 'https://archive.org/download/prince_bn_librivox/';
       return [
-        ['Chapters 1-3: Principalities and Hereditary Monarchies', base + 'prince_01-03_machiavelli_64kb.mp3'],
-        ['Chapters 4-6: Conquered States and New Dominions', base + 'prince_04-06_machiavelli_64kb.mp3'],
-        ['Chapters 7-9: Fortunes, Wickedness, and Civil Principalities', base + 'prince_07-09_machiavelli_64kb.mp3'],
-        ['Chapters 10-12: The Strength of States and Mercenary Troops', base + 'prince_10-12_machiavelli_64kb.mp3'],
-        ['Chapters 13-14: Auxiliary Troops and Military Duties', base + 'prince_13-14_machiavelli_64kb.mp3'],
-        ['Chapters 15-17: Praise, Blame, Liberality, and Cruelty', base + 'prince_15-17_machiavelli_64kb.mp3'],
-        ['Chapters 18-19: How Princes Should Keep Faith', base + 'prince_18-19_machiavelli_64kb.mp3'],
-        ['Chapters 20-23: Fortresses, Renown, and Flattery', base + 'prince_20-23_machiavelli_64kb.mp3'],
-        ['Chapters 24-26: Fortune’s Influence and Exhortation to Liberate Italy', base + 'prince_24-26_machiavelli_64kb.mp3']
+        ['Chapters 1-5: Dedication & Principalities', base + 'prince_01_machiavelli_64kb.mp3'],
+        ['Chapters 6-11: New Dominions & Civil Rule', base + 'prince_02_machiavelli_64kb.mp3'],
+        ['Chapters 12-13: Strength of States & Mercenaries', base + 'prince_03_machiavelli_64kb.mp3'],
+        ['Chapters 14-17: Military Duties, Liberality & Cruelty', base + 'prince_04_machiavelli_64kb.mp3'],
+        ['Chapters 18-19: How Princes Should Keep Faith', base + 'prince_05_machiavelli_64kb.mp3'],
+        ['Chapters 20-22: Fortresses & Choosing Ministers', base + 'prince_06_machiavelli_64kb.mp3'],
+        ['Chapters 23-26: Fortune & Exhortation to Liberate Italy', base + 'prince_07_machiavelli_64kb.mp3']
       ];
     })(),
     '6': (() => {
