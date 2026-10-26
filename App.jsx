@@ -236,21 +236,22 @@ export default function BooksemApp() {
         ['Chapter 14 Part 1: How to Outwit the Six Ghosts of Fear', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2014%20Part%201.mp3']
       ];
     })(),
-        '3': (() => {
+        // 3. Meditations (Marcus Aurelius) - Verified LibriVox
+    3: (() => {
       const base = 'https://archive.org/download/meditations_0708_librivox/';
       return [
-        ['Book 1: Debts and Lessons from Family', base + 'meditations_01_marcusaurelius.mp3'],
+        ['Book 1: Debts and Lessons', base + 'meditations_01_marcusaurelius.mp3'],
         ['Book 2: On the River Gran, Among the Quadi', base + 'meditations_02_marcusaurelius.mp3'],
         ['Book 3: In Carnuntum', base + 'meditations_03_marcusaurelius.mp3'],
         ['Book 4: The Inner Citadel', base + 'meditations_04_marcusaurelius.mp3'],
-        ['Book 5: At Daybreak — Rising to Duty', base + 'meditations_05_marcusaurelius.mp3'],
-        ['Book 6: Reason and the Whole', base + 'meditations_06_marcusaurelius.mp3'],
-        ['Book 7: Transient Things and the Soul', base + 'meditations_07_marcusaurelius.mp3'],
-        ['Book 8: Contentment in Any Station', base + 'meditations_08_marcusaurelius.mp3'],
-        ['Book 9: Injustice as Impiety', base + 'meditations_09_marcusaurelius.mp3'],
-        ['Book 10: Perfection of the Rational Animal', base + 'meditations_10_marcusaurelius.mp3'],
-        ['Book 11: Integrity and Goodwill', base + 'meditations_11_marcusaurelius.mp3'],
-        ['Book 12: Farewell in Peace and Grace', base + 'meditations_12_marcusaurelius.mp3']
+        ['Book 5: Morning Thoughts & Duty', base + 'meditations_05_marcusaurelius.mp3'],
+        ['Book 6: The Ruling Center', base + 'meditations_06_marcusaurelius.mp3'],
+        ['Book 7: The Art of Living', base + 'meditations_07_marcusaurelius.mp3'],
+        ['Book 8: The Equilibrium of the Soul', base + 'meditations_08_marcusaurelius.mp3'],
+        ['Book 9: Sincerity and Justice', base + 'meditations_09_marcusaurelius.mp3'],
+        ['Book 10: The Whole & The Parts', base + 'meditations_10_marcusaurelius.mp3'],
+        ['Book 11: The Properties of the Rational Soul', base + 'meditations_11_marcusaurelius.mp3'],
+        ['Book 12: The Epilogue', base + 'meditations_12_marcusaurelius.mp3']
       ];
     })(),
     '4': (() => {
@@ -274,15 +275,16 @@ export default function BooksemApp() {
         ['Chapters 59-61: Resolution & Weddings', base + 'prideandprejudice_59-61_austen_64kb.mp3']
       ];
     })(),
-    '5': (() => {
-      const base = 'https://archive.org/download/prince_bn_librivox/';
+    // 5. The Prince (Niccolo Machiavelli) - Verified LibriVox
+    5: (() => {
+      const base = 'https://archive.org/download/prince_machiavelli_librivox/';
       return [
-        ['Chapters 1-5: Dedication & Principalities', base + 'prince_01_machiavelli_64kb.mp3'],
-        ['Chapters 6-11: New Dominions & Civil Rule', base + 'prince_02_machiavelli_64kb.mp3'],
-        ['Chapters 12-13: Strength of States & Mercenaries', base + 'prince_03_machiavelli_64kb.mp3'],
-        ['Chapters 14-17: Military Duties, Liberality & Cruelty', base + 'prince_04_machiavelli_64kb.mp3'],
-        ['Chapters 18-19: How Princes Should Keep Faith', base + 'prince_05_machiavelli_64kb.mp3'],
-        ['Chapters 20-22: Fortresses & Choosing Ministers', base + 'prince_06_machiavelli_64kb.mp3'],
+        ['Dedication & Chapters 1-5: Types of Principalities', base + 'prince_01_machiavelli_64kb.mp3'],
+        ['Chapters 6-9: New Principalities & Civic Rule', base + 'prince_02_machiavelli_64kb.mp3'],
+        ['Chapters 10-14: Military Strengths & Mercenaries', base + 'prince_03_machiavelli_64kb.mp3'],
+        ['Chapters 15-18: Things for Which Men Are Praised or Blamed', base + 'prince_04_machiavelli_64kb.mp3'],
+        ['Chapters 19-21: Avoiding Contempt & Gaining Renown', base + 'prince_05_machiavelli_64kb.mp3'],
+        ['Chapter 22: The Secretaries of Princes & Ministers', base + 'prince_06_machiavelli_64kb.mp3'],
         ['Chapters 23-26: Fortune & Exhortation to Liberate Italy', base + 'prince_07_machiavelli_64kb.mp3']
       ];
     })(),
