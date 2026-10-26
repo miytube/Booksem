@@ -261,7 +261,7 @@ export default function BooksemApp() {
 
   const AUDIO_URLS = {
     '1': 'https://archive.org/download/art_of_war_librivox/art_of_war_01-02_sun_tzu.mp3',
-    '2': 'https://archive.org/download/audiobook-thinkandgrowrich/ch01.mp3',
+    '2': 'https://archive.org/download/think-and-grow-rich_202408/Think%20and%20Grow%20Rich%20-%20Chapter%201%20Part%201.mp3',
     '3': 'https://archive.org/download/meditations_0708_librivox/meditations_01_marcusaurelius.mp3',
     '4': 'https://archive.org/download/pride_prejudice_1102_librivox/prideandprejudice_01_austen.mp3',
     '5': 'https://archive.org/download/prince_pa_librivox/prince_01_machiavelli.mp3',
