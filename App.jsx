@@ -3,7 +3,8 @@ import {
   BookOpen, Headphones, Mic, PenTool, ShoppingBag,
   Play, Pause, Star, Upload, Search, MessageSquare,
   Video, Users, Volume2, ShieldCheck, Heart, Share2,
-  CheckCircle, ArrowRight, SkipBack, SkipForward, RotateCcw, RotateCw, Moon, List
+  CheckCircle, ArrowRight, SkipBack, SkipForward, RotateCcw, RotateCw, Moon, List,
+  Lock, Unlock, Sparkles, Check, X
 } from 'lucide-react';
 
 export default function BooksemApp() {
@@ -26,6 +27,32 @@ export default function BooksemApp() {
   const resumeTimeRef = useRef(0);
   const autoPlayRef = useRef(false);
 
+  // Paywall & Membership State
+  const [unlockedBooks, setUnlockedBooks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('booksem_unlocked_books') || '[]'); } catch { return []; }
+  });
+  const [hasMonthlyPass, setHasMonthlyPass] = useState(() => {
+    return localStorage.getItem('booksem_has_pass') === 'true';
+  });
+  const [showPaywallModal, setShowPaywallModal] = useState(false);
+  const [paywallTargetBook, setPaywallTargetBook] = useState(null);
+
+  const isBookUnlocked = (bookId) => {
+    if (hasMonthlyPass) return true;
+    return unlockedBooks.includes(bookId);
+  };
+
+  const isChapterUnlocked = (bookId, trackIdx) => {
+    if (trackIdx === 0) return true; // Chapter 1 is always 100% free preview
+    return isBookUnlocked(bookId);
+  };
+
+  const unlockBook = (bookId) => {
+    const updated = unlockedBooks.includes(bookId) ? unlockedBooks : [...unlockedBooks, bookId];
+    setUnlockedBooks(updated);
+    localStorage.setItem('booksem_unlocked_books', JSON.stringify(updated));
+  };
+
   const sampleBooks = [
     {
       id: '1',
@@ -33,7 +60,7 @@ export default function BooksemApp() {
       author: 'Sun Tzu',
       genre: 'Non-Fiction',
       format: 'Audiobook & E-Book',
-      price: 0.00,
+      price: 3.99,
       rating: 4.9,
       reviewsCount: 1420,
       cover: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=400',
@@ -43,13 +70,13 @@ export default function BooksemApp() {
       id: '2',
       title: 'Think and Grow Rich',
       author: 'Napoleon Hill',
-      genre: 'Non-Fiction',
+      genre: 'Self-Help',
       format: 'Audiobook & E-Book',
       price: 4.99,
       rating: 4.8,
-      reviewsCount: 2890,
-      cover: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=400',
-      description: 'The legendary blueprint on persistence, faith, and the 13 proven principles behind personal achievement and wealth creation.'
+      reviewsCount: 2840,
+      cover: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?auto=format&fit=crop&q=80&w=400',
+      description: 'The world-famous philosophy of individual achievement, perseverance, and turning burning desire into lasting wealth.'
     },
     {
       id: '3',
@@ -57,7 +84,7 @@ export default function BooksemApp() {
       author: 'Marcus Aurelius',
       genre: 'Non-Fiction',
       format: 'Audiobook & E-Book',
-      price: 0.00,
+      price: 4.99,
       rating: 4.9,
       reviewsCount: 3100,
       cover: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=400',
@@ -69,7 +96,7 @@ export default function BooksemApp() {
       author: 'Jane Austen',
       genre: 'Fiction',
       format: 'Audiobook & E-Book',
-      price: 0.00,
+      price: 4.99,
       rating: 4.8,
       reviewsCount: 4210,
       cover: 'https://images.unsplash.com/photo-1476275466078-4007374efbbe?auto=format&fit=crop&q=80&w=400',
@@ -81,7 +108,7 @@ export default function BooksemApp() {
       author: 'Niccolò Machiavelli',
       genre: 'Non-Fiction',
       format: 'Audiobook & E-Book',
-      price: 0.00,
+      price: 3.99,
       rating: 4.7,
       reviewsCount: 1650,
       cover: 'https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&q=80&w=400',
@@ -93,7 +120,7 @@ export default function BooksemApp() {
       author: 'Mary Shelley',
       genre: 'Fiction',
       format: 'Audiobook & E-Book',
-      price: 0.00,
+      price: 4.99,
       rating: 4.8,
       reviewsCount: 2430,
       cover: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=400',
@@ -105,11 +132,11 @@ export default function BooksemApp() {
       author: 'Wallace D. Wattles',
       genre: 'Non-Fiction',
       format: 'Audiobook & E-Book',
-      price: 0.00,
+      price: 3.99,
       rating: 4.7,
       reviewsCount: 1120,
-      cover: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&q=80&w=400',
-      description: 'A practical, non-philosophical guide detailing how clear thought and purposeful daily action attract material abundance.'
+      cover: 'https://images.unsplash.com/photo-1592496431122-2349e0fbc666?auto=format&fit=crop&q=80&w=400',
+      description: 'A pragmatic mental guide detailing how creative thought, positive expectation, and focused action generate prosperity.'
     },
     {
       id: '8',
@@ -117,11 +144,11 @@ export default function BooksemApp() {
       author: 'Bram Stoker',
       genre: 'Fiction',
       format: 'Audiobook & E-Book',
-      price: 0.00,
+      price: 5.99,
       rating: 4.8,
-      reviewsCount: 1980,
-      cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=400',
-      description: 'The chilling epistolary horror adventure of Count Dracula attempting to migrate from Transylvania to Victorian England.'
+      reviewsCount: 3500,
+      cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&q=80&w=400',
+      description: 'The atmospheric epistolary horror masterpiece documenting Count Dracula’s attempt to move from Transylvania to England.'
     },
     {
       id: '9',
@@ -129,11 +156,11 @@ export default function BooksemApp() {
       author: 'F. Scott Fitzgerald',
       genre: 'Fiction',
       format: 'Audiobook & E-Book',
-      price: 0.00,
-      rating: 4.9,
-      reviewsCount: 3820,
-      cover: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=80&w=400',
-      description: 'The glittering tragedy of Jay Gatsby, jazz age obsession, unreachable wealth, and the illusions of the American Dream.'
+      price: 4.99,
+      rating: 4.6,
+      reviewsCount: 4890,
+      cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=400',
+      description: 'A tragic portrait of Jazz Age obsession, high society wealth, unrequited desire, and the elusive American Dream.'
     },
     {
       id: '10',
@@ -141,11 +168,11 @@ export default function BooksemApp() {
       author: 'Charles Dickens',
       genre: 'Fiction',
       format: 'Audiobook & E-Book',
-      price: 0.00,
+      price: 5.99,
       rating: 4.7,
-      reviewsCount: 1540,
+      reviewsCount: 1980,
       cover: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&q=80&w=400',
-      description: 'It was the best of times, it was the worst of times: an epic panorama of Paris and London during the French Revolution.'
+      description: 'Set between London and Paris during the brutality of the French Revolution, depicting sacrifice, redemption, and rebirth.'
     },
     {
       id: '11',
@@ -153,166 +180,280 @@ export default function BooksemApp() {
       author: 'Oscar Wilde',
       genre: 'Fiction',
       format: 'Audiobook & E-Book',
-      price: 0.00,
+      price: 4.99,
       rating: 4.8,
       reviewsCount: 2210,
-      cover: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=400',
-      description: 'A decadent philosophical novel about aesthetic hedonism, eternal youth, vanity, and the hidden rot of the soul.'
+      cover: 'https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&q=80&w=400',
+      description: 'The dark philosophical tale of eternal youth, hedonism, aesthetic corruption, and a portrait that bears the soul’s sins.'
     },
     {
       id: '12',
       title: 'The Prophet',
       author: 'Kahlil Gibran',
-      genre: 'Poetry & Philosophy',
+      genre: 'Poetry',
       format: 'Audiobook & E-Book',
-      price: 0.00,
+      price: 2.99,
       rating: 4.9,
-      reviewsCount: 2750,
+      reviewsCount: 1750,
       cover: 'https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?auto=format&fit=crop&q=80&w=400',
-      description: 'Poetic fables offering spiritual wisdom on love, marriage, children, giving, work, joy, sorrow, and freedom.'
+      description: 'A poetic spiritual collection of twenty-eight fables offering wisdom on love, work, sorrow, freedom, and time.'
     }
   ];
 
-
-  const BOOK_TEXT = {
-    "The Art of War": {
-      "chapter": "Chapter 1: Laying Plans",
-      "paragraphs": [
-        "Sun Tzu said: The art of war is of vital importance to the State. It is a matter of life and death, a road either to safety or to ruin. Hence it is a subject of inquiry which can on no account be neglected.",
-        "The art of war, then, is governed by five constant factors, to be taken into account in one’s deliberations, when seeking to determine the conditions obtaining in the field. These are: The Moral Law; Heaven; Earth; The Commander; Method and discipline.",
-        "The Moral Law causes the people to be in complete accord with their ruler, so that they will follow him regardless of their lives, undismayed by any danger.",
-        "Heaven signifies night and day, cold and heat, times and seasons. Earth comprises distances, great and small; danger and security; open ground and narrow passes; the chances of life and death.",
-        "The Commander stands for the virtues of wisdom, sincerely, benevolence, courage and strictness. By method and discipline are to be understood the marshaling of the army in its proper subdivisions, the graduations of rank among the officers, the maintenance of roads by which supplies may reach the army, and the control of military expenditure.",
-        "These five heads should be familiar to every general: he who knows them will be victorious; he who knows them not will fail.",
-        "All warfare is based on deception. Hence, when able to attack, we must seem unable; when using our forces, we must seem inactive; when we are near, we must make the enemy believe we are far away; when far away, we must make him believe we are near.",
-        "Hold out baits to entice the enemy. Feign disorder, and crush him. If he is secure at all points, be prepared for him. If he is in superior strength, evade him."
-      ]
-    },
-    "Think and Grow Rich": {
-      "chapter": "Chapter 1: Thoughts Are Things",
-      "paragraphs": [
-        "Truly, thoughts are things, and powerful things at that, when they are mixed with definiteness of purpose, persistence, and a burning desire for their translation into riches, or other material objects.",
-        "A little more than thirty years ago, Edwin C. Barnes discovered how true it is that men really do think and grow rich. His discovery did not come about at one sitting. It came little by little, beginning with a burning desire to become a business associate of the great Edison."
-      ]
-    },
-    "Meditations": {
-      "chapter": "Book One",
-      "paragraphs": [
-        "From my grandfather Verus I learned good morals and the government of my temper.",
-        "From the reputation and remembrance of my father, modesty and a manly character. From my mother, piety and beneficence, and abstinence, not only from evil deeds, but even from evil thoughts; and further, simplicity in my way of living, far removed from the habits of the rich."
-      ]
-    },
-    "Pride and Prejudice": {
-      "chapter": "Chapter 1",
-      "paragraphs": [
-        "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
-        "However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters."
-      ]
-    },
-    "The Prince": {
-      "chapter": "Chapter 1: How Many Kinds of Principalities There Are",
-      "paragraphs": [
-        "All states, all powers, that have held and hold rule over men have been and are either republics or principalities.",
-        "Principalities are either hereditary, in which the family has been long established; or they are new. The new are either entirely new, or they are, as it were, members annexed to the hereditary state of the prince who has acquired them."
-      ]
-    },
-    "Frankenstein": {
-      "chapter": "Letter 1",
-      "paragraphs": [
-        "You will rejoice to hear that no disaster has accompanied the commencement of an enterprise which you have regarded with such evil forebodings. I arrived here yesterday, and my first task is to assure my dear sister of my welfare and increasing confidence in the success of my undertaking.",
-        "I am already far north of London, and as I walk in the streets of Petersburgh, I feel a cold northern breeze play upon my cheeks, which braces my nerves and fills me with delight."
-      ]
-    },
-    "The Science of Getting Rich": {
-      "chapter": "Chapter 1: The Right to Be Rich",
-      "paragraphs": [
-        "Whatever may be said in praise of poverty, the fact remains that it is not possible to live a really complete or successful life unless one is rich.",
-        "No man can rise to his greatest possible height in talent or soul development unless he has plenty of money; for to unfold the soul and to develop talent he must have many things to use, and he cannot have these things unless he has money to buy them with."
-      ]
-    },
-    "Dracula": {
-      "chapter": "Chapter 1: Jonathan Harker's Journal",
-      "paragraphs": [
-        "Left Munich at 8:35 P.M., on 1st May, arriving at Vienna early next morning; should have arrived at 6:46, but train was an hour late.",
-        "Buda-Pesth seems a wonderful place, from the glimpse which I got of it from the train and the little I could walk through the streets. I feared to go very far from the station, as we had arrived late and would start as near the correct time as possible."
-      ]
-    },
-    "The Great Gatsby": {
-      "chapter": "Chapter 1",
-      "paragraphs": [
-        "In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.",
-        "Whenever you feel like criticizing any one, he told me, just remember that all the people in this world haven't had the advantages that you've had."
-      ]
-    },
-    "A Tale of Two Cities": {
-      "chapter": "Book the First, Chapter 1: The Period",
-      "paragraphs": [
-        "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was the spring of hope, it was the winter of despair.",
-        "We had everything before us, we had nothing before us, we were all going direct to Heaven, we were all going direct the other way."
-      ]
-    },
-    "The Picture of Dorian Gray": {
-      "chapter": "Chapter 1",
-      "paragraphs": [
-        "The studio was filled with the rich odour of roses, and when the light summer wind stirred amidst the trees of the garden, there came through the open door the heavy scent of the lilac, or the more delicate perfume of the pink-flowering thorn.",
-        "From the corner of the divan of Persian saddle-bags on which he was lying, smoking, as was his custom, innumerable cigarettes, Lord Henry Wotton could just catch the gleam of the honey-sweet and long-blossoming laburnum."
-      ]
-    },
-    "The Prophet": {
-      "chapter": "The Coming of the Ship",
-      "paragraphs": [
-        "Almustafa, the chosen and the beloved, who was a dawn unto his own day, had waited twelve years in the city of Orphalese for his ship that was to return and bear him back to the isle of his birth.",
-        "And in the twelfth year, on the seventh day of Ielool, the month of reaping, he climbed the hill without the city walls and looked seaward; and he beheld his ship coming with the mist."
-      ]
-    }
+  // COMPLETE CHAPTER PLAYLISTS FOR ALL 12 BOOKS
+  const BOOK_CHAPTERS = {
+    '1': [
+      ['Chapters 1-2: Laying Plans & Waging War', 'https://ia800206.us.archive.org/16/items/art_of_war_0709_librivox/art_of_war_01-02_sun_tzu_64kb.mp3'],
+      ['Chapters 3-4: Attack by Stratagem & Tactical Dispositions', 'https://ia800206.us.archive.org/16/items/art_of_war_0709_librivox/art_of_war_03-04_sun_tzu_64kb.mp3'],
+      ['Chapters 5-6: Energy & Weak Points and Strong', 'https://ia800206.us.archive.org/16/items/art_of_war_0709_librivox/art_of_war_05-06_sun_tzu_64kb.mp3'],
+      ['Chapters 7-8: Maneuvering & Variation in Tactics', 'https://ia800206.us.archive.org/16/items/art_of_war_0709_librivox/art_of_war_07-08_sun_tzu_64kb.mp3'],
+      ['Chapters 9-10: The Army on the March & Terrain', 'https://ia800206.us.archive.org/16/items/art_of_war_0709_librivox/art_of_war_09-10_sun_tzu_64kb.mp3'],
+      ['Chapters 11-12: The Nine Situations & Attack by Fire', 'https://ia800206.us.archive.org/16/items/art_of_war_0709_librivox/art_of_war_11-12_sun_tzu_64kb.mp3'],
+      ['Chapter 13: The Use of Spies', 'https://ia800206.us.archive.org/16/items/art_of_war_0709_librivox/art_of_war_13_sun_tzu_64kb.mp3']
+    ],
+    '2': (() => {
+      const base = 'https://ia800108.us.archive.org/27/items/think-and-grow-rich_202408/';
+      const list = [
+        ['Chapter 1 Part 1: Introduction & Desire', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%201%20Part%201.mp3'],
+        ['Chapter 1 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%201%20Part%202.mp3'],
+        ['Chapter 1 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%201%20Part%203.mp3'],
+        ['Chapter 1 Part 4', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%201%20Part%204.mp3'],
+        ['Chapter 1 Part 5', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%201%20Part%205.mp3'],
+        ['Chapter 1 Part 6', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%201%20Part%206.mp3'],
+        ['Chapter 2 Part 1: Desire — The Turning Point', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%202%20Part%201.mp3'],
+        ['Chapter 2 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%202%20Part%202.mp3'],
+        ['Chapter 2 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%202%20Part%203.mp3'],
+        ['Chapter 2 Part 4', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%202%20Part%204.mp3'],
+        ['Chapter 2 Part 5', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%202%20Part%205.mp3'],
+        ['Chapter 2 Part 6', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%202%20Part%206.mp3'],
+        ['Chapter 3 Part 1: Faith — Visualization of Desire', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%203%20Part%201.mp3'],
+        ['Chapter 3 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%203%20Part%202.mp3'],
+        ['Chapter 3 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%203%20Part%203.mp3'],
+        ['Chapter 3 Part 4', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%203%20Part%204.mp3'],
+        ['Chapter 3 Part 5', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%203%20Part%205.mp3'],
+        ['Chapter 3 Part 6', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%203%20Part%206.mp3'],
+        ['Chapter 4 Part 1: Auto-Suggestion', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%204%20Part%201.mp3'],
+        ['Chapter 4 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%204%20Part%202.mp3'],
+        ['Chapter 4 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%204%20Part%203.mp3'],
+        ['Chapter 4 Part 4', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%204%20Part%204.mp3'],
+        ['Chapter 5 Part 1: Specialized Knowledge', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%205%20Part%201.mp3'],
+        ['Chapter 5 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%205%20Part%202.mp3'],
+        ['Chapter 5 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%205%20Part%203.mp3'],
+        ['Chapter 5 Part 4', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%205%20Part%204.mp3'],
+        ['Chapter 5 Part 5', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%205%20Part%205.mp3'],
+        ['Chapter 6 Part 1: Imagination — The Workshop of the Mind', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%206%20Part%201.mp3'],
+        ['Chapter 6 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%206%20Part%202.mp3'],
+        ['Chapter 6 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%206%20Part%203.mp3'],
+        ['Chapter 6 Part 4', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%206%20Part%204.mp3'],
+        ['Chapter 6 Part 5', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%206%20Part%205.mp3'],
+        ['Chapter 6 Part 6', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%206%20Part%206.mp3'],
+        ['Chapter 7 Part 1: Organized Planning', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%207%20Part%201.mp3'],
+        ['Chapter 7 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%207%20Part%202.mp3'],
+        ['Chapter 7 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%207%20Part%203.mp3'],
+        ['Chapter 7 Part 4', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%207%20Part%204.mp3'],
+        ['Chapter 7 Part 5', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%207%20Part%205.mp3'],
+        ['Chapter 7 Part 6', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%207%20Part%206.mp3'],
+        ['Chapter 7 Part 7', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%207%20Part%207.mp3'],
+        ['Chapter 7 Part 8', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%207%20Part%208.mp3'],
+        ['Chapter 7 Part 9', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%207%20Part%209.mp3'],
+        ['Chapter 7 Part 10', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%207%20Part%2010.mp3'],
+        ['Chapter 8 Part 1: Decision — The Mastery of Procrastination', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%208%20Part%201.mp3'],
+        ['Chapter 8 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%208%20Part%202.mp3'],
+        ['Chapter 8 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%208%20Part%203.mp3'],
+        ['Chapter 8 Part 4', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%208%20Part%204.mp3'],
+        ['Chapter 9 Part 1: Persistence', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%209%20Part%201.mp3'],
+        ['Chapter 9 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%209%20Part%202.mp3'],
+        ['Chapter 9 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%209%20Part%203.mp3'],
+        ['Chapter 9 Part 4', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%209%20Part%204.mp3'],
+        ['Chapter 9 Part 5', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%209%20Part%205.mp3'],
+        ['Chapter 10 Part 1: Power of the Master Mind', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2010%20Part%201.mp3'],
+        ['Chapter 10 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2010%20Part%202.mp3'],
+        ['Chapter 11 Part 1: Mystery of Sex Transmutation', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2011%20Part%201.mp3'],
+        ['Chapter 11 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2011%20Part%202.mp3'],
+        ['Chapter 11 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2011%20Part%203.mp3'],
+        ['Chapter 11 Part 4', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2011%20Part%204.mp3'],
+        ['Chapter 11 Part 5', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2011%20Part%205.mp3'],
+        ['Chapter 12 Part 1: The Subconscious Mind', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2012%20Part%201.mp3'],
+        ['Chapter 12 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2012%20Part%202.mp3'],
+        ['Chapter 12 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2012%20Part%203.mp3'],
+        ['Chapter 13 Part 1: The Brain — Broadcasting Station', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2013%20Part%201.mp3'],
+        ['Chapter 13 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2013%20Part%202.mp3'],
+        ['Chapter 14 Part 1: The Sixth Sense', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2014%20Part%201.mp3'],
+        ['Chapter 14 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2014%20Part%202.mp3'],
+        ['Chapter 14 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2014%20Part%203.mp3'],
+        ['Chapter 15 Part 1: Six Ghosts of Fear', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2015%20Part%201.mp3'],
+        ['Chapter 15 Part 2', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2015%20Part%202.mp3'],
+        ['Chapter 15 Part 3', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2015%20Part%203.mp3'],
+        ['Chapter 15 Part 4', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2015%20Part%204.mp3'],
+        ['Chapter 15 Part 5', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2015%20Part%205.mp3'],
+        ['Chapter 15 Part 6', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2015%20Part%206.mp3'],
+        ['Chapter 15 Part 7', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2015%20Part%207.mp3'],
+        ['Chapter 15 Part 8', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2015%20Part%208.mp3'],
+        ['Chapter 15 Part 9', base + 'Think%20and%20Grow%20Rich%20-%20Chapter%2015%20Part%209.mp3']
+      ];
+      return list;
+    })(),
+    '3': [
+      ['Introduction', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_00_aurelius_64kb.mp3'],
+      ['Book 1', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_01_aurelius_64kb.mp3'],
+      ['Book 2', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_02_aurelius_64kb.mp3'],
+      ['Book 3', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_03_aurelius_64kb.mp3'],
+      ['Book 4', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_04_aurelius_64kb.mp3'],
+      ['Book 5', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_05_aurelius_64kb.mp3'],
+      ['Book 6', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_06_aurelius_64kb.mp3'],
+      ['Book 7', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_07_aurelius_64kb.mp3'],
+      ['Book 8', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_08_aurelius_64kb.mp3'],
+      ['Book 9', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_09_aurelius_64kb.mp3'],
+      ['Book 10', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_10_aurelius_64kb.mp3'],
+      ['Book 11', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_11_aurelius_64kb.mp3'],
+      ['Book 12', 'https://ia800301.us.archive.org/31/items/meditations_0804_librivox/meditations_12_aurelius_64kb.mp3']
+    ],
+    '4': (() => {
+      const base = 'https://ia800302.us.archive.org/1/items/pride_and_prejudice_librivox/';
+      const list = [];
+      for (let i = 1; i <= 61; i++) {
+        const s = String(i).padStart(2, '0');
+        list.push([`Chapter ${i}`, `${base}prideandprejudice_${s}_austen_64kb.mp3`]);
+      }
+      return list;
+    })(),
+    '5': [
+      ['Introduction & Dedication', 'https://ia800204.us.archive.org/28/items/prince_librivox/prince_01_machiavelli_64kb.mp3'],
+      ['Chapters 1-5: Types of Principalities', 'https://ia800204.us.archive.org/28/items/prince_librivox/prince_02_machiavelli_64kb.mp3'],
+      ['Chapters 6-9: New Dominions & Civil Principality', 'https://ia800204.us.archive.org/28/items/prince_librivox/prince_03_machiavelli_64kb.mp3'],
+      ['Chapters 10-14: Defense, Mercenaries & Military Affairs', 'https://ia800204.us.archive.org/28/items/prince_librivox/prince_04_machiavelli_64kb.mp3'],
+      ['Chapters 15-19: Conduct, Cruelty & Avoiding Contempt', 'https://ia800204.us.archive.org/28/items/prince_librivox/prince_05_machiavelli_64kb.mp3'],
+      ['Chapters 20-23: Fortresses, Honors & Choosing Counselors', 'https://ia800204.us.archive.org/28/items/prince_librivox/prince_06_machiavelli_64kb.mp3'],
+      ['Chapters 24-26: Fortune & Exhortation to Liberate Italy', 'https://ia800204.us.archive.org/28/items/prince_librivox/prince_07_machiavelli_64kb.mp3']
+    ],
+    '6': (() => {
+      const base = 'https://ia800205.us.archive.org/16/items/frankenstein_shelley_librivox/';
+      const list = [
+        ['Author Preface & Letters 1-4', base + 'frankenstein_01_shelley_64kb.mp3']
+      ];
+      for (let i = 1; i <= 24; i++) {
+        const s = String(i + 1).padStart(2, '0');
+        list.push([`Chapter ${i}`, `${base}frankenstein_${s}_shelley_64kb.mp3`]);
+      }
+      return list;
+    })(),
+    '7': (() => {
+      const base = 'https://ia800208.us.archive.org/10/items/science_getting_rich_librivox/';
+      const list = [
+        ['Preface', base + 'scienceofgettingrich_00_wattles_64kb.mp3']
+      ];
+      for (let i = 1; i <= 17; i++) {
+        const s = String(i).padStart(2, '0');
+        list.push([`Chapter ${i}`, `${base}scienceofgettingrich_${s}_wattles_64kb.mp3`]);
+      }
+      return list;
+    })(),
+    '8': (() => {
+      const base = 'https://ia800301.us.archive.org/14/items/dracula_librivox/';
+      const list = [];
+      for (let i = 1; i <= 27; i++) {
+        const s = String(i).padStart(2, '0');
+        list.push([`Chapter ${i}`, `${base}dracula_${s}_stoker_64kb.mp3`]);
+      }
+      return list;
+    })(),
+    '9': (() => {
+      const base = 'https://ia800902.us.archive.org/28/items/thegreatgatsby_2101_librivox/';
+      const list = [];
+      for (let i = 1; i <= 10; i++) {
+        const s = String(i).padStart(2, '0');
+        list.push([`Chapter ${i}`, `${base}greatgatsby_${s}_fitzgerald_64kb.mp3`]);
+      }
+      return list;
+    })(),
+    '10': (() => {
+      const base = 'https://ia800301.us.archive.org/1/items/tale_two_cities_librivox/';
+      const list = [];
+      for (let i = 1; i <= 45; i++) {
+        const s = String(i).padStart(2, '0');
+        list.push([`Track ${i}`, `${base}two_cities_${s}_dickens_64kb.mp3`]);
+      }
+      return list;
+    })(),
+    '11': (() => {
+      const base = 'https://ia800201.us.archive.org/31/items/picture_of_dorian_gray_librivox/';
+      const list = [
+        ['Preface', base + 'doriangray_00_wilde_64kb.mp3']
+      ];
+      for (let i = 1; i <= 20; i++) {
+        const s = String(i).padStart(2, '0');
+        list.push([`Chapter ${i}`, `${base}doriangray_${s}_wilde_64kb.mp3`]);
+      }
+      return list;
+    })(),
+    '12': (() => {
+      const base = 'https://ia800204.us.archive.org/2/items/the_prophet_librivox/';
+      return [
+        ['Part 1: The Coming of the Ship & Love', base + 'theprophet_01_gibran_64kb.mp3'],
+        ['Part 2: Marriage, Children & Giving', base + 'theprophet_02_gibran_64kb.mp3'],
+        ['Part 3: Eating, Drinking, Work & Joy', base + 'theprophet_03_gibran_64kb.mp3'],
+        ['Part 4: Houses, Clothes, Buying & Selling', base + 'theprophet_04_gibran_64kb.mp3'],
+        ['Part 5: Crime, Punishment, Laws & Freedom', base + 'theprophet_05_gibran_64kb.mp3'],
+        ['Part 6: Reason, Passion, Pain & Self-Knowledge', base + 'theprophet_06_gibran_64kb.mp3'],
+        ['Part 7: Teaching, Friendship, Talking, Time & Farewell', base + 'theprophet_07_gibran_64kb.mp3']
+      ];
+    })()
   };
-  const AUDIOBOOKS = {"1": {"base": "https://archive.org/download/art_of_war_librivox/", "chapters": [["1 Laying Plans - 2 Waging War", "art_of_war_01-02_sun_tzu.mp3"], ["3 Attack By Stratagem - 4 Tactical Dispositions", "art_of_war_03-04_sun_tzu.mp3"], ["5 Energy - 6 Weak Points and Strong", "art_of_war_05-06_sun_tzu.mp3"], ["7 Maneuvering - 8 Variation in Tactics", "art_of_war_07-08_sun_tzu.mp3"], ["9 The Army on the March - 10 Terrain", "art_of_war_09-10_sun_tzu.mp3"], ["11 The Nine Situations", "art_of_war_11_sun_tzu.mp3"], ["12 The Attack By Fire - 13 The Use of Spies", "art_of_war_12-13_sun_tzu.mp3"]]}, "2": {"base": "https://archive.org/download/think-and-grow-rich_202408/", "chapters": [["Chapter 0 Part 2 (What Do You Want Most)", "Think and Grow Rich - Chapter 0 Part 2 (What Do You Want Most).mp3"], ["Chapter 0 Part 3 (Author Tributes)", "Think and Grow Rich - Chapter 0 Part 3 (Author Tributes).mp3"], ["Chapter 0 Part 4 (Publisher's Preface)", "Think and Grow Rich - Chapter 0 Part 4 (Publisher's Preface).mp3"], ["Chapter 0 Part 5 (Author's Preface Part 1)", "Think and Grow Rich - Chapter 0 Part 5 (Author's Preface Part 1).mp3"], ["Chapter 0 Part 6 (Author's Preface Part 2)", "Think and Grow Rich - Chapter 0 Part 6 (Author's Preface Part 2).mp3"], ["Chapter 0 Part 7 (Author's Preface Part 3)", "Think and Grow Rich - Chapter 0 Part 7 (Author's Preface Part 3).mp3"], ["Chapter 1 Part 1", "Think and Grow Rich - Chapter 1 Part 1.mp3"], ["Chapter 1 Part 2", "Think and Grow Rich - Chapter 1 Part 2.mp3"], ["Chapter 1 Part 3", "Think and Grow Rich - Chapter 1 Part 3.mp3"], ["Chapter 1 Part 4", "Think and Grow Rich - Chapter 1 Part 4.mp3"], ["Chapter 1 Part 5", "Think and Grow Rich - Chapter 1 Part 5.mp3"], ["Chapter 2 Part 1", "Think and Grow Rich - Chapter 2 Part 1.mp3"], ["Chapter 2 Part 2", "Think and Grow Rich - Chapter 2 Part 2.mp3"], ["Chapter 2 Part 3", "Think and Grow Rich - Chapter 2 Part 3.mp3"], ["Chapter 2 Part 4", "Think and Grow Rich - Chapter 2 Part 4.mp3"], ["Chapter 2 Part 5", "Think and Grow Rich - Chapter 2 Part 5.mp3"], ["Chapter 2 Part 6", "Think and Grow Rich - Chapter 2 Part 6.mp3"], ["Chapter 2 Part 7", "Think and Grow Rich - Chapter 2 Part 7.mp3"], ["Chapter 3 Part 1", "Think and Grow Rich - Chapter 3 Part 1.mp3"], ["Chapter 3 Part 2", "Think and Grow Rich - Chapter 3 Part 2.mp3"], ["Chapter 3 Part 3", "Think and Grow Rich - Chapter 3 Part 3.mp3"], ["Chapter 3 Part 4", "Think and Grow Rich - Chapter 3 Part 4.mp3"], ["Chapter 3 Part 5", "Think and Grow Rich - Chapter 3 Part 5.mp3"], ["Chapter 3 Part 6", "Think and Grow Rich - Chapter 3 Part 6.mp3"], ["Chapter 3 Part 7", "Think and Grow Rich - Chapter 3 Part 7.mp3"], ["Chapter 4 Part 1", "Think and Grow Rich - Chapter 4 Part 1.mp3"], ["Chapter 4 Part 2", "Think and Grow Rich - Chapter 4 Part 2.mp3"], ["Chapter 5 Part 1", "Think and Grow Rich - Chapter 5 Part 1.mp3"], ["Chapter 5 Part 2", "Think and Grow Rich - Chapter 5 Part 2.mp3"], ["Chapter 5 Part 3", "Think and Grow Rich - Chapter 5 Part 3.mp3"], ["Chapter 5 Part 4", "Think and Grow Rich - Chapter 5 Part 4.mp3"], ["Chapter 5 Part 5", "Think and Grow Rich - Chapter 5 Part 5.mp3"], ["Chapter 6 Part 1", "Think and Grow Rich - Chapter 6 Part 1.mp3"], ["Chapter 6 Part 2", "Think and Grow Rich - Chapter 6 Part 2.mp3"], ["Chapter 6 Part 3", "Think and Grow Rich - Chapter 6 Part 3.mp3"], ["Chapter 6 Part 4", "Think and Grow Rich - Chapter 6 Part 4.mp3"], ["Chapter 6 Part 5", "Think and Grow Rich - Chapter 6 Part 5.mp3"], ["Chapter 7 Part 1", "Think and Grow Rich - Chapter 7 Part 1.mp3"], ["Chapter 7 Part 2", "Think and Grow Rich - Chapter 7 Part 2.mp3"], ["Chapter 7 Part 3", "Think and Grow Rich - Chapter 7 Part 3.mp3"], ["Chapter 7 Part 4", "Think and Grow Rich - Chapter 7 Part 4.mp3"], ["Chapter 7 Part 5", "Think and Grow Rich - Chapter 7 Part 5.mp3"], ["Chapter 7 Part 6", "Think and Grow Rich - Chapter 7 Part 6.mp3"], ["Chapter 7 Part 7", "Think and Grow Rich - Chapter 7 Part 7.mp3"], ["Chapter 7 Part 8", "Think and Grow Rich - Chapter 7 Part 8.mp3"], ["Chapter 7 Part 9", "Think and Grow Rich - Chapter 7 Part 9.mp3"], ["Chapter 7 Part 10", "Think and Grow Rich - Chapter 7 Part 10.mp3"], ["Chapter 7 Part 11", "Think and Grow Rich - Chapter 7 Part 11.mp3"], ["Chapter 7 Part 12", "Think and Grow Rich - Chapter 7 Part 12.mp3"], ["Chapter 7 Part 13", "Think and Grow Rich - Chapter 7 Part 13.mp3"], ["Chapter 7 Part 14", "Think and Grow Rich - Chapter 7 Part 14.mp3"], ["Chapter 7 Part 15", "Think and Grow Rich - Chapter 7 Part 15.mp3"], ["Chapter 8 Part 1", "Think and Grow Rich - Chapter 8 Part 1.mp3"], ["Chapter 8 Part 2", "Think and Grow Rich - Chapter 8 Part 2.mp3"], ["Chapter 8 Part 3", "Think and Grow Rich - Chapter 8 Part 3.mp3"], ["Chapter 8 Part 4", "Think and Grow Rich - Chapter 8 Part 4.mp3"], ["Chapter 9 Part 1", "Think and Grow Rich - Chapter 9 Part 1.mp3"], ["Chapter 9 Part 2", "Think and Grow Rich - Chapter 9 Part 2.mp3"], ["Chapter 9 Part 3", "Think and Grow Rich - Chapter 9 Part 3.mp3"], ["Chapter 9 Part 4", "Think and Grow Rich - Chapter 9 Part 4.mp3"], ["Chapter 9 Part 5", "Think and Grow Rich - Chapter 9 Part 5.mp3"], ["Chapter 9 Part 6", "Think and Grow Rich - Chapter 9 Part 6.mp3"], ["Chapter 10 Part 1", "Think and Grow Rich - Chapter 10 Part 1.mp3"], ["Chapter 10 Part 2", "Think and Grow Rich - Chapter 10 Part 2.mp3"], ["Chapter 11 Part 1", "Think and Grow Rich - Chapter 11 Part 1.mp3"], ["Chapter 11 Part 2", "Think and Grow Rich - Chapter 11 Part 2.mp3"], ["Chapter 11 Part 3", "Think and Grow Rich - Chapter 11 Part 3.mp3"], ["Chapter 11 Part 4", "Think and Grow Rich - Chapter 11 Part 4.mp3"], ["Chapter 11 Part 5", "Think and Grow Rich - Chapter 11 Part 5.mp3"], ["Chapter 11 Part 6", "Think and Grow Rich - Chapter 11 Part 6.mp3"], ["Chapter 11 Part 7", "Think and Grow Rich - Chapter 11 Part 7.mp3"], ["Chapter 11 Part 8", "Think and Grow Rich - Chapter 11 Part 8.mp3"], ["Chapter 12 Part 1", "Think and Grow Rich - Chapter 12 Part 1.mp3"], ["Chapter 12 Part 2", "Think and Grow Rich - Chapter 12 Part 2.mp3"], ["Chapter 12 Part 3", "Think and Grow Rich - Chapter 12 Part 3.mp3"], ["Chapter 13 Part 1", "Think and Grow Rich - Chapter 13 Part 1.mp3"], ["Chapter 13 Part 2", "Think and Grow Rich - Chapter 13 Part 2.mp3"], ["Chapter 14 Part 1", "Think and Grow Rich - Chapter 14 Part 1.mp3"], ["Chapter 14 Part 2", "Think and Grow Rich - Chapter 14 Part 2.mp3"], ["Chapter 14 Part 3", "Think and Grow Rich - Chapter 14 Part 3.mp3"], ["Chapter 14 Part 4", "Think and Grow Rich - Chapter 14 Part 4.mp3"], ["Chapter 15 Part 1", "Think and Grow Rich - Chapter 15 Part 1.mp3"], ["Chapter 15 Part 2", "Think and Grow Rich - Chapter 15 Part 2.mp3"], ["Chapter 15 Part 3", "Think and Grow Rich - Chapter 15 Part 3.mp3"], ["Chapter 15 Part 4", "Think and Grow Rich - Chapter 15 Part 4.mp3"], ["Chapter 15 Part 5", "Think and Grow Rich - Chapter 15 Part 5.mp3"], ["Chapter 15 Part 6", "Think and Grow Rich - Chapter 15 Part 6.mp3"], ["Chapter 15 Part 7", "Think and Grow Rich - Chapter 15 Part 7.mp3"], ["Chapter 15 Part 8", "Think and Grow Rich - Chapter 15 Part 8.mp3"], ["Chapter 15 Part 9", "Think and Grow Rich - Chapter 15 Part 9.mp3"], ["Chapter 15 Part 10", "Think and Grow Rich - Chapter 15 Part 10.mp3"], ["Chapter 15 Part 11", "Think and Grow Rich - Chapter 15 Part 11.mp3"], ["Chapter 15 Part 12", "Think and Grow Rich - Chapter 15 Part 12.mp3"]]}, "3": {"base": "https://archive.org/download/meditations_0708_librivox/", "chapters": [["00 - Introduction", "meditations_00_marcusaurelius.mp3"], ["01 - Section 01", "meditations_01_marcusaurelius.mp3"], ["02 - Section 02", "meditations_02_marcusaurelius.mp3"], ["03 - Section 03", "meditations_03_marcusaurelius.mp3"], ["04 - Section 04", "meditations_04_marcusaurelius.mp3"], ["05 - Section 05", "meditations_05_marcusaurelius.mp3"], ["06 - Section 06", "meditations_06_marcusaurelius.mp3"], ["07 - Section 07", "meditations_07_marcusaurelius.mp3"], ["08 - Section 08", "meditations_08_marcusaurelius.mp3"], ["09 - Section 09", "meditations_09_marcusaurelius.mp3"], ["10 - Section 10", "meditations_10_marcusaurelius.mp3"], ["11 - Section 11", "meditations_11_marcusaurelius.mp3"], ["12 - Section 12", "meditations_12_marcusaurelius.mp3"], ["13 - M. Aurelius Antoninus, by George Long M.A.", "meditations_13_marcusaurelius.mp3"], ["14 - The Philosophy of Marcus Aurelius by George Long", "meditations_14_marcusaurelius.mp3"]]}, "4": {"base": "https://archive.org/download/pride_prejudice_1102_librivox/", "chapters": [["01- Chapters 1-2", "prideandprejudice_01_austen.mp3"], ["02 - Chapter 3", "prideandprejudice_02_austen.mp3"], ["03 - Chapters 4-5", "prideandprejudice_03_austen.mp3"], ["04 - Chapter 6", "prideandprejudice_04_austen.mp3"], ["05 - Chapter 7", "prideandprejudice_05_austen.mp3"], ["06 - Chapter 8", "prideandprejudice_06_austen.mp3"], ["07 - Chapter 9", "prideandprejudice_07_austen.mp3"], ["08 - Chapter 10", "prideandprejudice_08_austen.mp3"], ["09 - Chapter 11", "prideandprejudice_09_austen.mp3"], ["10 - Chapters 12-13", "prideandprejudice_10_austen.mp3"], ["11 - Chapters 14-15", "prideandprejudice_11_austen.mp3"], ["12 - Chapter 16", "prideandprejudice_12_austen.mp3"], ["13 - Chapter 17", "prideandprejudice_13_austen.mp3"], ["14 - Chapter 18", "prideandprejudice_14_austen.mp3"], ["15 - Chapter 19", "prideandprejudice_15_austen.mp3"], ["16 - Chapter 20", "prideandprejudice_16_austen.mp3"], ["17 - Chapter 21", "prideandprejudice_17_austen.mp3"], ["18 - Chapter 22", "prideandprejudice_18_austen.mp3"], ["19 - Chapter 23", "prideandprejudice_19_austen.mp3"], ["20 - Chapter 24", "prideandprejudice_20_austen.mp3"], ["21 - Chapter 25", "prideandprejudice_21_austen.mp3"], ["22 - Chapter 26", "prideandprejudice_22_austen.mp3"], ["23 - Chapter 27", "prideandprejudice_23_austen.mp3"], ["24 - Chapter 28", "prideandprejudice_24_austen.mp3"], ["25 - Chapter 29", "prideandprejudice_25_austen.mp3"], ["26 - Chapter 30", "prideandprejudice_26_austen.mp3"], ["27 - Chapter 31", "prideandprejudice_27_austen.mp3"], ["28 - Chapter 32", "prideandprejudice_28_austen.mp3"], ["29 - Chapter 33", "prideandprejudice_29_austen.mp3"], ["30 - Chapter 34", "prideandprejudice_30_austen.mp3"], ["31 - Chapter 35", "prideandprejudice_31_austen.mp3"], ["32 - Chapter 36", "prideandprejudice_32_austen.mp3"], ["33 - Chapter 37", "prideandprejudice_33_austen.mp3"], ["34 - Chapter 38", "prideandprejudice_34_austen.mp3"], ["35 - Chapter 39", "prideandprejudice_35_austen.mp3"], ["36 - Chapter 40", "prideandprejudice_36_austen.mp3"], ["37 - Chapter 41", "prideandprejudice_37_austen.mp3"], ["38 - Chapter 42", "prideandprejudice_38_austen.mp3"], ["39 - Chapter 43", "prideandprejudice_39_austen.mp3"], ["40 - Chapter 44", "prideandprejudice_40_austen.mp3"], ["41 - Chapter 45", "prideandprejudice_41_austen.mp3"], ["42 - Chapter 46", "prideandprejudice_42_austen.mp3"], ["43 - Chapter 47", "prideandprejudice_43_austen.mp3"], ["44 - Chapter 48", "prideandprejudice_44_austen.mp3"], ["45 - Chapter 49", "prideandprejudice_45_austen.mp3"], ["46 - Chapter 50", "prideandprejudice_46_austen.mp3"], ["47 - Chapter 51", "prideandprejudice_47_austen.mp3"], ["48 - Chapter 52", "prideandprejudice_48_austen.mp3"], ["49 - Chapter 53", "prideandprejudice_49_austen.mp3"], ["50 - Chapter 54", "prideandprejudice_50_austen.mp3"], ["51 - Chapter 55", "prideandprejudice_51_austen.mp3"], ["52 - Chapter 56", "prideandprejudice_52_austen.mp3"], ["53 - Chapter 57", "prideandprejudice_53_austen.mp3"], ["54 - Chapter 58", "prideandprejudice_54_austen.mp3"], ["55 - Chapter 59", "prideandprejudice_55_austen.mp3"], ["56 - Chapter 60", "prideandprejudice_56_austen.mp3"], ["57 - Chapter 61", "prideandprejudice_57_austen.mp3"]]}, "5": {"base": "https://archive.org/download/prince_pa_librivox/", "chapters": [["00 - The Prince - Front matter", "prince_00_machiavelli.mp3"], ["01 - The Prince - Ch. 01-03", "prince_01_machiavelli.mp3"], ["02 - The Prince - Ch. 04-06", "prince_02_machiavelli.mp3"], ["03 - The Prince - Ch. 07-08", "prince_03_machiavelli.mp3"], ["04 - The Prince - Ch. 09-11", "prince_04_machiavelli.mp3"], ["05 - The Prince - Ch. 12-13", "prince_05_machiavelli.mp3"], ["06 - The Prince - Ch. 14-16", "prince_06_machiavelli.mp3"], ["07 - The Prince - Ch. 17-18", "prince_07_machiavelli.mp3"], ["08 - The Prince - Ch. 19", "prince_08_machiavelli.mp3"], ["09 - The Prince - Ch. 20-22", "prince_09_machiavelli.mp3"], ["10 - The Prince - Ch. 23-26", "prince_10_machiavelli.mp3"], ["11 - The Prince - Appendix 1", "prince_11_machiavelli.mp3"], ["12 - The Life of Castruccio Castracani of Lucca - Part 1", "prince_12_machiavelli.mp3"], ["13 - The Life of Castruccio Castracani of Lucca - Part 2", "prince_13_machiavelli.mp3"]]}, "6": {"base": "https://archive.org/download/frankenstein_cs_librivox/", "chapters": [["01 - Dedication and Preface", "frankenstein_01_shelley.mp3"], ["02 - Vol. I, Letter I", "frankenstein_02_shelley.mp3"], ["03 - Vol. I, Letter II", "frankenstein_03_shelley.mp3"], ["04 - Vol. I, Letter III", "frankenstein_04_shelley.mp3"], ["05 - Vol. I, Letter IV", "frankenstein_05_shelley.mp3"], ["06 - Vol. I, Chapter I", "frankenstein_06_shelley.mp3"], ["07 - Vol. I, Chapter II", "frankenstein_07_shelley.mp3"], ["08 - Vol. I, Chapter III", "frankenstein_08_shelley.mp3"], ["09 - Vol. I, Chapter IV", "frankenstein_09_shelley.mp3"], ["10 - Vol. I, Chapter V", "frankenstein_10_shelley.mp3"], ["11 - Vol. I, Chapter VI", "frankenstein_11_shelley.mp3"], ["12 - Vol. I, Chapter VII", "frankenstein_12_shelley.mp3"], ["13 - Vol. II, Chapter I", "frankenstein_13_shelley.mp3"], ["14 - Vol. II, Chapter II", "frankenstein_14_shelley.mp3"], ["15 - Vol. II, Chapter III", "frankenstein_15_shelley.mp3"], ["16 - Vol. II, Chapter IV", "frankenstein_16_shelley.mp3"], ["17 - Vol. II, Chapter V", "frankenstein_17_shelley.mp3"], ["18 - Vol. II, Chapter VI", "frankenstein_18_shelley.mp3"], ["19 - Vol. II, Chapter VII", "frankenstein_19_shelley.mp3"], ["20 - Vol. II, Chapter VIII", "frankenstein_20_shelley.mp3"], ["21 - Vol. II, Chapter IX", "frankenstein_21_shelley.mp3"], ["22 - Vol. III, Chapter I", "frankenstein_22_shelley.mp3"], ["23 - Vol. III, Chapter II", "frankenstein_23_shelley.mp3"], ["24 - Vol. III, Chapter III", "frankenstein_24_shelley.mp3"], ["25 - Vol. III, Chapter IV", "frankenstein_25_shelley.mp3"], ["26 - Vol. III, Chapter V", "frankenstein_26_shelley.mp3"], ["27 - Vol. III, Chapter VI", "frankenstein_27_shelley.mp3"], ["28 - Vol. III, Chapter VII", "frankenstein_28_shelley.mp3"], ["29 - Vol. III, Letters", "frankenstein_29_shelley.mp3"]]}, "7": {"base": "https://archive.org/download/TheScienceofGettingRich/", "chapters": [["Science of Getting Rich - Preface", "01_Preface.mp3"], ["Science of Getting Rich - Chapter 1: The Right to Be Rich", "02_ChapterOne.mp3"], ["Science of Getting Rich - Chapter 2: There Is a Science of Getting Rich", "03_ChapterTwo.mp3"], ["Science of Getting Rich - Chapter 3: Is Opportunity Monopolized?", "04_ChapterThree.mp3"], ["Science of Getting Rich - Chapter 4: The First Principle in The Science of Getting Rich", "05_ChapterFour.mp3"], ["Science of Getting Rich - Chapter 5: Increasing Life", "06_ChapterFive.mp3"], ["Science of Getting Rich - Chapter 6: How Riches Come to You", "07_ChapterSix.mp3"], ["Science of Getting Rich - Chapter 7: Gratitude", "08_ChapterSeven.mp3"], ["Science of Getting Rich - Chapter 8: Thinking in the Certain Way", "09_ChapterEight.mp3"], ["Science of Getting Rich - Chapter 9: How to Use the Will", "10_ChapterNine.mp3"], ["Science of Getting Rich - Chapter 10: Further Use of the Will", "11_ChapterTen.mp3"], ["Science of Getting Rich - Chapter 11: Acting in the Certain Way", "12_ChapterEleven.mp3"], ["Science of Getting Rich - Chapter 12: Efficient Action", "13_ChapterTwelve.mp3"], ["Science of Getting Rich - Chapter 13: Getting Into the Right Business", "14_ChapterThirteen.mp3"], ["Science of Getting Rich - Chapter 14: The Impression of Increase", "15_ChapterFourteen.mp3"], ["Science of Getting Rich - Chapter 15: The Advancing Man", "16_ChapterFifteen.mp3"], ["Science of Getting Rich - Chapter 16: Some Cautions, and Concluding Observations", "17_ChapterSixteen.mp3"], ["Science of Getting Rich - Chapter 17: Summary of the Science of Getting Rich", "18_ChapterSeventeen.mp3"]]}, "8": {"base": "https://archive.org/download/dracula_librivox/", "chapters": [["Chapter 01", "dracula_01_stoker.mp3"], ["Chapter 02", "dracula_02_stoker.mp3"], ["Chapter 03", "dracula_03_stoker.mp3"], ["Chapter 04", "dracula_04_stoker.mp3"], ["Chapter 05", "dracula_05_stoker.mp3"], ["Chapter 06", "dracula_06_stoker.mp3"], ["Chapter 07", "dracula_07_stoker.mp3"], ["Chapter 08", "dracula_08_stoker.mp3"], ["Chapter 09", "dracula_09_stoker.mp3"], ["Chapter 10", "dracula_10_stoker.mp3"], ["Chapter 11", "dracula_11_stoker.mp3"], ["Chapter 12", "dracula_12_stoker.mp3"], ["Chapter 13", "dracula_13_stoker.mp3"], ["Chapter 14", "dracula_14_stoker.mp3"], ["Chapter 15", "dracula_15_stoker.mp3"], ["Chapter 16", "dracula_16_stoker.mp3"], ["Chapter 17", "dracula_17_stoker.mp3"], ["Chapter 18", "dracula_18_stoker.mp3"], ["Chapter 19", "dracula_19_stoker.mp3"], ["Chapter 20", "dracula_20_stoker.mp3"], ["Chapter 21", "dracula_21_stoker.mp3"], ["Chapter 22", "dracula_22_stoker.mp3"], ["Chapter 23", "dracula_23_stoker.mp3"], ["Chapter 24", "dracula_24_stoker.mp3"], ["Chapter 25", "dracula_25_stoker.mp3"], ["Chapter 26", "dracula_26_stoker.mp3"], ["Chapter 27", "dracula_27_stoker.mp3"]]}, "9": {"base": "https://archive.org/download/thegreatgatsbyversion4_2402_librivox/", "chapters": [["00 - Introduction", "greatgatsby4_00_fitzgerald.mp3"], ["01 - Chapter 1", "greatgatsby4_01_fitzgerald.mp3"], ["02 - Chapter 2", "greatgatsby4_02_fitzgerald.mp3"], ["03 - Chapter 3", "greatgatsby4_03_fitzgerald.mp3"], ["04 - Chapter 4", "greatgatsby4_04_fitzgerald.mp3"], ["05 - Chapter 5", "greatgatsby4_05_fitzgerald.mp3"], ["06 - Chapter 6", "greatgatsby4_06_fitzgerald.mp3"], ["07 - Chapter 7", "greatgatsby4_07_fitzgerald.mp3"], ["08 - Chapter 8", "greatgatsby4_08_fitzgerald.mp3"], ["09 - Chapter 9", "greatgatsby4_09_fitzgerald.mp3"]]}, "10": {"base": "https://archive.org/download/tale_two_cities_librivox/", "chapters": [["Bk1 Ch01 - The Period", "tale_of_two_cities_01_dickens.mp3"], ["Bk1 Ch02 - The Mail", "tale_of_two_cities_02_dickens.mp3"], ["Bk1 Ch03 - The Night Shadows", "tale_of_two_cities_03_dickens.mp3"], ["Bk1 Ch04 - The Preparation", "tale_of_two_cities_04_dickens.mp3"], ["Bk1 Ch05 - The Wine Shop", "tale_of_two_cities_05_dickens.mp3"], ["Bk1 Ch06 - The Shoemaker", "tale_of_two_cities_06_dickens.mp3"], ["Bk2 Ch01 - Five Years Later", "tale_of_two_cities_07_dickens.mp3"], ["Bk2 Ch02 - A Sight", "tale_of_two_cities_08_dickens.mp3"], ["Bk2 Ch03 - A Disappointment", "tale_of_two_cities_09_dickens.mp3"], ["Bk2 Ch04 - Congratulatory", "tale_of_two_cities_10_dickens.mp3"], ["Bk2 Ch05 - The Jackal", "tale_of_two_cities_11_dickens.mp3"], ["Bk2 Ch06 - Hundreds of People", "tale_of_two_cities_12_dickens.mp3"], ["Bk2 Ch07 - Monseigneur in Town", "tale_of_two_cities_13_dickens.mp3"], ["Bk2 Ch08 - Monseigneur in the Country", "tale_of_two_cities_14_dickens.mp3"], ["Bk2 Ch09 - The Gorgon's Head", "tale_of_two_cities_15_dickens.mp3"], ["Bk2 Ch10 - Two Promises", "tale_of_two_cities_16_dickens.mp3"], ["Bk2 Ch11 - A Companion Picture", "tale_of_two_cities_17_dickens.mp3"], ["Bk2 Ch12 - The Fellow of Delicacy", "tale_of_two_cities_18_dickens.mp3"], ["Bk2 Ch13 - The Fellow of no Delicacy", "tale_of_two_cities_19_dickens.mp3"], ["Bk2 Ch14 - The Honest Tradesman", "tale_of_two_cities_20_dickens.mp3"], ["Bk2 Ch15 - Knitting", "tale_of_two_cities_21_dickens.mp3"], ["Bk2 Ch16 - Still Knitting", "tale_of_two_cities_22_dickens.mp3"], ["Bk2 Ch17 - One Night", "tale_of_two_cities_23_dickens.mp3"], ["Bk2 Ch18 - Nine Days", "tale_of_two_cities_24_dickens.mp3"], ["Bk2 Ch19 - An Opinion", "tale_of_two_cities_25_dickens.mp3"], ["Bk2 Ch20 - A Plea", "tale_of_two_cities_26_dickens.mp3"], ["Bk2 Ch21 - Echoing Footsteps", "tale_of_two_cities_27_dickens.mp3"], ["Bk2 Ch22 - The Sea Still Rises", "tale_of_two_cities_28_dickens.mp3"], ["Bk2 Ch23 - Fire Rises", "tale_of_two_cities_29_dickens.mp3"], ["Bk2 Ch24 - Drawn to the Loadstone Rock", "tale_of_two_cities_30_dickens.mp3"], ["Bk3 Ch01 - In Secret", "tale_of_two_cities_31_dickens.mp3"], ["Bk3 Ch02 - The Grindstone", "tale_of_two_cities_32_dickens.mp3"], ["Bk3 Ch03 - The Shadow", "tale_of_two_cities_33_dickens.mp3"], ["Bk3 Ch04 - Calm in Storm", "tale_of_two_cities_34_dickens.mp3"], ["Bk3 Ch05 - The Wood Sawyer", "tale_of_two_cities_35_dickens.mp3"], ["Bk3 Ch06 - Triumph", "tale_of_two_cities_36_dickens.mp3"], ["Bk3 Ch07 - A Knock at the Door", "tale_of_two_cities_37_dickens.mp3"], ["Bk3 Ch08 - A Hand at Cards", "tale_of_two_cities_38_dickens.mp3"], ["Bk3 Ch09 - The Game Made", "tale_of_two_cities_39_dickens.mp3"], ["Bk3 Ch10 - The Substance of the Shadow", "tale_of_two_cities_40_dickens.mp3"], ["Bk3 Ch11 - Dusk", "tale_of_two_cities_41_dickens.mp3"], ["Bk3 Ch12 - Darkness", "tale_of_two_cities_42_dickens.mp3"], ["Bk3 Ch13 - Fifty-two", "tale_of_two_cities_43_dickens.mp3"], ["Bk3 Ch14 - The Knitting Done", "tale_of_two_cities_44_dickens.mp3"], ["Bk3 Ch15 - The Footsteps Die Out For Ever", "tale_of_two_cities_45_dickens.mp3"]]}, "11": {"base": "https://archive.org/download/picture_dorian_gray_1204_librivox/", "chapters": [["00 - The Preface", "pictureofdoriangray_00_wilde.mp3"], ["01 - Chapter 1", "pictureofdoriangray_01_wilde.mp3"], ["02 - Chapter 2", "pictureofdoriangray_02_wilde.mp3"], ["03 - Chapter 3", "pictureofdoriangray_03_wilde.mp3"], ["04 - Chapter 4", "pictureofdoriangray_04_wilde.mp3"], ["05 - Chapter 5", "pictureofdoriangray_05_wilde.mp3"], ["06 - Chapter 6", "pictureofdoriangray_06_wilde.mp3"], ["07 - Chapter 7", "pictureofdoriangray_07_wilde.mp3"], ["08 - Chapter 08", "pictureofdoriangray_08_wilde.mp3"], ["09 - Chapter 9", "pictureofdoriangray_09_wilde.mp3"], ["10 - Chapter 10", "pictureofdoriangray_10_wilde.mp3"], ["11 - Chapter 11", "pictureofdoriangray_11_wilde.mp3"], ["12 - Chapter 12", "pictureofdoriangray_12_wilde.mp3"], ["13 - Chapter 13", "pictureofdoriangray_13_wilde.mp3"], ["14 - Chapter 14", "pictureofdoriangray_14_wilde.mp3"], ["15 - Chapter 15", "pictureofdoriangray_15_wilde.mp3"], ["16 - Chapter 16", "pictureofdoriangray_16_wilde.mp3"], ["17 - Chapter 17", "pictureofdoriangray_17_wilde.mp3"], ["18 - Chapter 18", "pictureofdoriangray_18_wilde.mp3"], ["19 - Chapter 19", "pictureofdoriangray_19_wilde.mp3"], ["20 - Chapter 20", "pictureofdoriangray_20_wilde.mp3"]]}, "12": {"base": "https://archive.org/download/prophet1_1901_librivox/", "chapters": [["01 - Ch 1-2", "prophet1_01_gibran.mp3"], ["02 - Ch 3-7", "prophet1_02_gibran.mp3"], ["03 - Ch 8-12", "prophet1_03_gibran.mp3"], ["04 - Ch 13-18", "prophet1_04_gibran.mp3"], ["05 - Ch 19-23", "prophet1_05_gibran.mp3"], ["06 - Ch 24-27", "prophet1_06_gibran.mp3"], ["07 - Ch 28", "prophet1_07_gibran.mp3"]]}};
 
-  const selectedBook = sampleBooks.find((b) => b.id === selectedBookId) || sampleBooks[0];
-  const bookText = BOOK_TEXT[selectedBook.title] || { chapter: 'Preview', paragraphs: [selectedBook.description] };
-  const book = AUDIOBOOKS[selectedBook.id] || { base: '', chapters: [] };
-  const chapters = book.chapters;
+  const selectedBook = sampleBooks.find(b => b.id === selectedBookId) || sampleBooks[0];
+  const chapters = BOOK_CHAPTERS[selectedBookId] || BOOK_CHAPTERS['1'];
   const currentChapter = chapters[chapterIdx] || chapters[0];
-  const audioSrc = currentChapter ? book.base + encodeURIComponent(currentChapter[1]) : '';
+  const audioSrc = currentChapter ? currentChapter[1] : '';
 
-  const loadProgress = (id) => {
-    try { return JSON.parse(localStorage.getItem('booksem_progress_' + id) || 'null'); } catch { return null; }
-  };
-
-  // When book changes, restore the saved chapter + time
+  // Resume progress on book switch
   useEffect(() => {
-    const p = loadProgress(selectedBookId);
-    setChapterIdx(p && p.chapter < (AUDIOBOOKS[selectedBookId]?.chapters.length || 0) ? p.chapter : 0);
-    resumeTimeRef.current = p ? p.time || 0 : 0;
-    localStorage.setItem('booksem_player', JSON.stringify({ bookId: selectedBookId }));
+    try {
+      const p = JSON.parse(localStorage.getItem('booksem_progress_' + selectedBookId) || '{}');
+      const idx = (typeof p.chapter === 'number' && p.chapter < chapters.length) ? p.chapter : 0;
+      setChapterIdx(idx);
+      resumeTimeRef.current = p.time || 0;
+      localStorage.setItem('booksem_player', JSON.stringify({ bookId: selectedBookId }));
+    } catch {
+      setChapterIdx(0);
+      resumeTimeRef.current = 0;
+    }
+    setCurrentTime(0);
+    setDuration(0);
   }, [selectedBookId]);
 
-  // Save progress every few seconds
+  // Save progress periodically
   useEffect(() => {
-    if (!currentTime) return;
-    if (Math.floor(currentTime) % 5 !== 0) return;
-    localStorage.setItem('booksem_progress_' + selectedBookId, JSON.stringify({ chapter: chapterIdx, time: currentTime }));
-  }, [Math.floor(currentTime)]);
-
-  // Sleep timer countdown
-  useEffect(() => {
-    if (!sleepEndsAt) return;
+    if (!isPlayingAudio) return;
     const t = setInterval(() => {
+      if (audioRef.current && audioRef.current.currentTime > 2) {
+        localStorage.setItem('booksem_progress_' + selectedBookId, JSON.stringify({
+          chapter: chapterIdx,
+          time: Math.floor(audioRef.current.currentTime)
+        }));
+      }
+    }, 4000);
+    return () => clearInterval(t);
+  }, [isPlayingAudio, selectedBookId, chapterIdx]);
+
+  // Sleep timer engine
+  useEffect(() => {
+    if (!sleepEndsAt || sleepMode === 'chapter') return;
+    const interval = setInterval(() => {
       if (Date.now() >= sleepEndsAt) {
-        audioRef.current && audioRef.current.pause();
+        if (audioRef.current) audioRef.current.pause();
         setIsPlayingAudio(false);
         setSleepMode(null);
         setSleepEndsAt(null);
       }
     }, 1000);
-    return () => clearInterval(t);
-  }, [sleepEndsAt]);
+    return () => clearInterval(interval);
+  }, [sleepEndsAt, sleepMode]);
 
-  const cycleSleep = () => {
-    const order = [null, 15, 30, 45, 60, 'chapter'];
-    const next = order[(order.indexOf(sleepMode) + 1) % order.length];
-    setSleepMode(next);
-    setSleepEndsAt(typeof next === 'number' ? Date.now() + next * 60000 : null);
+  const setSleepTimer = (mins) => {
+    if (mins === null) { setSleepMode(null); setSleepEndsAt(null); return; }
+    if (mins === 'chapter') { setSleepMode('chapter'); setSleepEndsAt(null); return; }
+    setSleepMode(mins);
+    setSleepEndsAt(Date.now() + mins * 60 * 1000);
   };
 
   const sleepLabel = sleepMode === null ? 'Sleep: Off' : sleepMode === 'chapter' ? 'Sleep: End of chapter'
@@ -325,6 +466,13 @@ export default function BooksemApp() {
 
   const goToChapter = (idx, autoplay = true) => {
     if (idx < 0 || idx >= chapters.length) return;
+    if (!isChapterUnlocked(selectedBookId, idx)) {
+      if (audioRef.current) audioRef.current.pause();
+      setIsPlayingAudio(false);
+      setPaywallTargetBook(selectedBook);
+      setShowPaywallModal(true);
+      return;
+    }
     resumeTimeRef.current = 0;
     autoPlayRef.current = autoplay;
     setCurrentTime(0);
@@ -341,7 +489,7 @@ export default function BooksemApp() {
   const handleLoaded = () => {
     const a = audioRef.current;
     if (!a) return;
-    setDuration(a.duration);
+    setDuration(a.duration || 0);
     a.playbackRate = playbackRate;
     if (resumeTimeRef.current > 0) { a.currentTime = resumeTimeRef.current; resumeTimeRef.current = 0; }
     if (autoPlayRef.current) {
@@ -352,8 +500,19 @@ export default function BooksemApp() {
 
   const handleEnded = () => {
     if (sleepMode === 'chapter') { setIsPlayingAudio(false); setSleepMode(null); return; }
-    if (chapterIdx + 1 < chapters.length) goToChapter(chapterIdx + 1, true);
-    else { setIsPlayingAudio(false); localStorage.removeItem('booksem_progress_' + selectedBookId); }
+    const nextIdx = chapterIdx + 1;
+    if (nextIdx < chapters.length) {
+      if (isChapterUnlocked(selectedBookId, nextIdx)) {
+        goToChapter(nextIdx, true);
+      } else {
+        setIsPlayingAudio(false);
+        setPaywallTargetBook(selectedBook);
+        setShowPaywallModal(true);
+      }
+    } else {
+      setIsPlayingAudio(false);
+      localStorage.removeItem('booksem_progress_' + selectedBookId);
+    }
   };
 
   // Lock-screen / headphone controls
@@ -376,169 +535,171 @@ export default function BooksemApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Format seconds to mm:ss
-  const formatTime = (secs) => {
-    if (isNaN(secs) || !secs) return '00:00';
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
-  // Toggle Audio Play / Pause
   const togglePlay = () => {
-    if (!audioRef.current) return;
+    const a = audioRef.current;
+    if (!a) return;
     if (isPlayingAudio) {
-      audioRef.current.pause();
+      a.pause();
       setIsPlayingAudio(false);
     } else {
-      audioRef.current.play().then(() => {
-        setIsPlayingAudio(true);
-      }).catch((err) => {
-        console.error('Audio playback error:', err);
+      a.play().then(() => setIsPlayingAudio(true)).catch(err => {
+        console.warn('Playback error:', err);
         setIsPlayingAudio(false);
       });
     }
   };
 
-  // Seek bar click
   const handleSeek = (e) => {
-    if (!audioRef.current || !duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const newTime = Math.max(0, Math.min(duration, (clickX / rect.width) * duration));
-    audioRef.current.currentTime = newTime;
-    setCurrentTime(newTime);
+    const val = parseFloat(e.target.value);
+    setCurrentTime(val);
+    if (audioRef.current) audioRef.current.currentTime = val;
   };
 
-  // Toggle playback speed (1.0x -> 1.25x -> 1.5x -> 2.0x)
-  const speeds = [1.0, 1.25, 1.5, 2.0];
-  const toggleSpeed = () => {
-    const nextIdx = (speeds.indexOf(playbackRate) + 1) % speeds.length;
-    const newSpeed = speeds[nextIdx];
-    setPlaybackRate(newSpeed);
-    if (audioRef.current) {
-      audioRef.current.playbackRate = newSpeed;
-    }
+  const changeRate = (rate) => {
+    setPlaybackRate(rate);
+    if (audioRef.current) audioRef.current.playbackRate = rate;
   };
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const formatTime = (seconds) => {
+    if (isNaN(seconds) || seconds < 0) return '00:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* 1. TOP NAVIGATION */}
-      <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { stopAll(); setActiveTab('marketplace'); }}>
-            <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-amber-500/20">
-              <BookOpen className="w-6 h-6" />
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
+      {/* 1. TOP NAVBAR */}
+      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('marketplace')}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <BookOpen className="w-6 h-6 text-slate-950 font-bold" />
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight text-white flex items-center gap-1">
+              <span className="text-xl font-extrabold tracking-tight text-white flex items-center">
                 Booksem<span className="text-amber-400">.com</span>
               </span>
+              <span className="text-[10px] text-slate-400 block -mt-1 font-medium">Listen & Read Audiobooks</span>
             </div>
           </div>
 
-          <nav className="hidden md:flex items-center space-x-1">
-            <button
-              onClick={() => { stopAll(); setActiveTab('marketplace'); }}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
-                activeTab === 'marketplace' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <ShoppingBag className="w-4 h-4 inline mr-2" />
-              Store & Explore
-            </button>
-            <button
-              onClick={() => setActiveTab('reader')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
-                activeTab === 'reader' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Headphones className="w-4 h-4 inline mr-2" />
-              Listen & Read
-            </button>
-            <button
-              onClick={() => setActiveTab('studio')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
-                activeTab === 'studio' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <PenTool className="w-4 h-4 inline mr-2" />
-              Author Studio
-            </button>
-            <button
-              onClick={() => setActiveTab('interview')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
-                activeTab === 'interview' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Mic className="w-4 h-4 inline mr-2" />
-              Interview Room
-            </button>
-          </nav>
+          <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
+            <div className="relative w-full">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Search audiobooks, classics, philosophy..." 
+                className="w-full pl-9 pr-4 py-1.5 bg-slate-950/60 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-400/50"
+              />
+            </div>
+          </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             <button 
               onClick={() => setShowUploadModal(true)}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold px-4 py-2 rounded-lg flex items-center border border-slate-700 transition"
+              className="flex items-center space-x-1 text-xs font-semibold bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-lg border border-slate-700 text-slate-200 transition"
             >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Work
+              <Upload className="w-4 h-4 text-amber-400" />
+              <span className="hidden sm:inline">Self-Publish</span>
             </button>
-            <button className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm px-4 py-2 rounded-lg transition shadow-md shadow-amber-500/20">
-              Cart ({cartCount})
-            </button>
+            <div className="relative cursor-pointer p-2 hover:bg-slate-800 rounded-lg">
+              <ShoppingBag className="w-5 h-5 text-slate-300" />
+              {cartCount > 0 && (
+                <span className="absolute top-1 right-1 bg-amber-500 text-slate-950 text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
-      {/* 2. BODY CONTENT */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
-        {/* TAB 1: STORE & EXPLORE */}
+      {/* 2. SUB NAVIGATION */}
+      <nav className="border-b border-slate-800/80 bg-slate-900/40">
+        <div className="max-w-7xl mx-auto px-4 flex space-x-2 overflow-x-auto py-2">
+          <button
+            onClick={() => setActiveTab('marketplace')}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
+              activeTab === 'marketplace' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <BookOpen className="w-4 h-4 inline mr-2" />
+            Book Store
+          </button>
+          <button
+            onClick={() => setActiveTab('reader')}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
+              activeTab === 'reader' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Headphones className="w-4 h-4 inline mr-2" />
+            Listen & Read
+          </button>
+          <button
+            onClick={() => setActiveTab('studio')}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
+              activeTab === 'studio' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <PenTool className="w-4 h-4 inline mr-2" />
+            Author Studio
+          </button>
+          <button
+            onClick={() => setActiveTab('interview')}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
+              activeTab === 'interview' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Video className="w-4 h-4 inline mr-2" />
+            Live Author Room
+          </button>
+        </div>
+      </nav>
+
+      {/* 3. MAIN CONTENT BODY */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* TAB 1: MARKETPLACE */}
         {activeTab === 'marketplace' && (
           <div className="space-y-8">
-            <div className="bg-gradient-to-r from-amber-500/15 via-slate-900 to-slate-900 border border-amber-500/30 rounded-2xl p-8 relative overflow-hidden">
-              <div className="max-w-2xl relative z-10">
-                <span className="text-amber-400 font-bold tracking-wider text-xs uppercase bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-                  Global Bookstore & Audio Reader
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-amber-600/20 via-slate-900 to-slate-900 border border-slate-800 p-8 sm:p-12">
+              <div className="max-w-xl">
+                <span className="text-xs font-bold uppercase tracking-widest text-amber-400 mb-2 block">
+                  Listen & Read Worldwide Classics
                 </span>
-                <h1 className="text-4xl font-extrabold text-white mt-4 mb-3 tracking-tight">
-                  Read & Listen to the Greatest Books Ever Written.
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                  High-Quality Audiobooks Read By Real Human Voices
                 </h1>
-                <p className="text-slate-400 text-base leading-relaxed mb-6">
-                  Access free public domain classics and audiobooks instantly, or publish your own work to readers worldwide.
+                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                  Chapter 1 free for every title. Stream the world's most enduring wisdom, stoic philosophies, timeless novels, and strategic masterpieces on any device.
                 </p>
-                <div className="flex items-center space-x-4">
+                <div className="mt-6 flex flex-wrap gap-3">
                   <button 
                     onClick={() => openBook('1')}
-                    className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-3 rounded-xl transition flex items-center shadow-lg shadow-amber-500/20"
+                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-amber-500/20 flex items-center"
                   >
-                    <Headphones className="w-5 h-5 mr-2" />
-                    Listen to The Art of War Free
+                    <Play className="w-4 h-4 mr-2 fill-slate-950" />
+                    Start Listening Now
                   </button>
                   <button 
-                    onClick={() => setShowUploadModal(true)}
-                    className="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-6 py-3 rounded-xl border border-slate-700 transition"
+                    onClick={() => {
+                      setPaywallTargetBook(sampleBooks[0]);
+                      setShowPaywallModal(true);
+                    }}
+                    className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl text-sm transition border border-slate-700 flex items-center"
                   >
-                    Sell Your Book
+                    <Sparkles className="w-4 h-4 mr-2 text-amber-400" />
+                    All-Access Pass ($9.99/mo)
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Catalog Grid */}
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-white">Featured Books & Audiobooks</h2>
-                  <p className="text-sm text-slate-400">12 Public Domain Classics & Global Bestsellers</p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">
-                    Showing 12 titles
-                  </span>
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white">Featured Audiobooks & Classics</h2>
+                <span className="text-xs text-slate-400">{sampleBooks.length} titles available</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -579,22 +740,35 @@ export default function BooksemApp() {
                         <div>
                           <span className="text-xs text-slate-500 block">Price</span>
                           <span className="text-lg font-bold text-white">
-                            {book.price === 0 ? 'FREE' : `$${book.price}`}
+                            ${book.price}
                           </span>
                         </div>
                         <div className="flex space-x-2">
                           <button 
                             onClick={() => openBook(book.id)}
                             className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold"
+                            title="Listen to Chapter 1 free preview"
                           >
-                            Preview
+                            Ch. 1 Free
                           </button>
-                          <button 
-                            onClick={() => openBook(book.id)}
-                            className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-lg text-xs font-bold transition"
-                          >
-                            {book.price === 0 ? 'Read / Listen' : 'Buy Now'}
-                          </button>
+                          {isBookUnlocked(book.id) ? (
+                            <button 
+                              onClick={() => openBook(book.id)}
+                              className="px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Owned
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => {
+                                setPaywallTargetBook(book);
+                                setShowPaywallModal(true);
+                              }}
+                              className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold transition shadow-sm shadow-amber-500/20"
+                            >
+                              Buy ${book.price}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -605,34 +779,7 @@ export default function BooksemApp() {
           </div>
         )}
 
-        {/* TAB 2: AUTHOR STUDIO */}
-        {activeTab === 'studio' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-white">Author Studio & Self-Publishing</h1>
-                <p className="text-slate-400 text-sm">Write, edit, and publish your manuscripts directly to the Booksem marketplace.</p>
-              </div>
-              <button 
-                onClick={() => setShowUploadModal(true)}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm transition"
-              >
-                Upload Manuscript
-              </button>
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <h2 className="text-lg font-bold text-white mb-2">Draft Editor</h2>
-              <textarea 
-                rows={12}
-                placeholder="Start typing your chapter here, or paste your manuscript..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-4 text-slate-200 font-serif leading-relaxed focus:outline-none focus:border-amber-500"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: INTEGRATED READER & REAL AUDIOBOOK PLAYER */}
+        {/* TAB 2: READER & COMPLETE AUDIOBOOK PLAYER */}
         {activeTab === 'reader' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -657,6 +804,30 @@ export default function BooksemApp() {
                 </button>
               </div>
             </div>
+
+            {/* Membership & Unlock status banner */}
+            {!isBookUnlocked(selectedBookId) && (
+              <div className="bg-gradient-to-r from-amber-500/15 via-slate-900 to-amber-500/15 border border-amber-500/30 rounded-xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-3 text-center sm:text-left">
+                  <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 flex-shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white">Listening to Free Preview (Chapter 1)</div>
+                    <div className="text-xs text-slate-400">Chapters 2–{chapters.length} require unlocking or an All-Access Pass.</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setPaywallTargetBook(selectedBook);
+                    setShowPaywallModal(true);
+                  }}
+                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition shadow-md shadow-amber-500/20 whitespace-nowrap"
+                >
+                  Unlock Full Audiobook (${selectedBook.price})
+                </button>
+              </div>
+            )}
 
             {/* REAL Working Audio Player Bar */}
             <div className="bg-gradient-to-r from-slate-900 to-amber-950/40 border border-amber-900/30 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
@@ -695,35 +866,57 @@ export default function BooksemApp() {
                 <span className="text-xs text-slate-400 font-mono w-10 text-right">
                   {formatTime(currentTime)}
                 </span>
-                <div 
-                  onClick={handleSeek}
-                  className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden cursor-pointer relative hover:h-3 transition-all"
-                  title="Click anywhere to jump in the audio"
-                >
-                  <div 
-                    className="bg-amber-500 h-full transition-[width] duration-150" 
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max={duration || 100} 
+                  value={currentTime} 
+                  onChange={handleSeek}
+                  className="flex-1 accent-amber-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+                />
                 <span className="text-xs text-slate-400 font-mono w-10">
-                  {duration > 0 ? formatTime(duration) : '--:--'}
+                  {formatTime(duration)}
                 </span>
               </div>
 
+              {/* Speed, Sleep & Chapter toggle */}
               <div className="flex items-center space-x-2">
-                <button 
-                  onClick={toggleSpeed}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition border border-slate-700"
-                  title="Click to change playback speed"
+                <select 
+                  value={playbackRate} 
+                  onChange={(e) => changeRate(parseFloat(e.target.value))}
+                  className="bg-slate-800 border border-slate-700 text-xs rounded px-2 py-1 text-slate-200 cursor-pointer"
                 >
-                  <Volume2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{playbackRate}x Speed</span>
-                </button>
-                <button onClick={cycleSleep} className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${sleepMode ? 'bg-amber-500/15 border-amber-500/40 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`} title="Sleep timer">
-                  <Moon className="w-3.5 h-3.5" /><span>{sleepLabel}</span>
-                </button>
-                <button onClick={() => setShowChapters(!showChapters)} className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700" title="Chapters">
-                  <List className="w-3.5 h-3.5 text-amber-400" /><span>Chapters</span>
+                  <option value="0.75">0.75x</option>
+                  <option value="1.0">1.0x</option>
+                  <option value="1.25">1.25x</option>
+                  <option value="1.5">1.5x</option>
+                  <option value="2.0">2.0x</option>
+                </select>
+
+                <select
+                  value={sleepMode === null ? 'off' : sleepMode}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === 'off') setSleepTimer(null);
+                    else if (v === 'chapter') setSleepTimer('chapter');
+                    else setSleepTimer(parseInt(v, 10));
+                  }}
+                  className="bg-slate-800 border border-slate-700 text-xs rounded px-2 py-1 text-slate-200 cursor-pointer"
+                  title={sleepLabel}
+                >
+                  <option value="off">Sleep: Off</option>
+                  <option value="15">Sleep: 15m</option>
+                  <option value="30">Sleep: 30m</option>
+                  <option value="45">Sleep: 45m</option>
+                  <option value="chapter">End of Ch.</option>
+                </select>
+
+                <button 
+                  onClick={() => setShowChapters(!showChapters)}
+                  className={`p-1.5 rounded text-xs border ${showChapters ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'}`}
+                  title="Toggle chapter list"
+                >
+                  <List className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -733,83 +926,155 @@ export default function BooksemApp() {
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 max-w-3xl mx-auto">
                 <h3 className="text-sm font-bold text-white mb-3">Complete Audiobook — {chapters.length} tracks · narrated by real human volunteers (LibriVox / Archive.org)</h3>
                 <div className="max-h-72 overflow-y-auto divide-y divide-slate-800">
-                  {chapters.map((c, i) => (
-                    <button key={c[1]} onClick={() => goToChapter(i)} className={`w-full text-left px-3 py-2 text-sm flex items-center gap-3 transition ${i === chapterIdx ? 'bg-amber-500/10 text-amber-300' : 'text-slate-300 hover:bg-slate-800'}`}>
-                      <span className="font-mono text-xs w-8 text-slate-500">{i + 1}</span>
-                      {i === chapterIdx && isPlayingAudio ? <Volume2 className="w-4 h-4 text-amber-400" /> : <Play className="w-3.5 h-3.5 text-slate-500" />}
-                      <span className="truncate">{c[0]}</span>
-                    </button>
-                  ))}
+                  {chapters.map((c, i) => {
+                    const unlocked = isChapterUnlocked(selectedBookId, i);
+                    return (
+                      <button 
+                        key={c[1]} 
+                        onClick={() => goToChapter(i)} 
+                        className={`w-full text-left px-3 py-2.5 text-sm flex items-center justify-between gap-3 transition ${
+                          i === chapterIdx ? 'bg-amber-500/10 text-amber-300' : 'text-slate-300 hover:bg-slate-800'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="font-mono text-xs w-8 text-slate-500">{i + 1}</span>
+                          {i === chapterIdx && isPlayingAudio ? (
+                            <Volume2 className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                          ) : unlocked ? (
+                            <Play className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                          ) : (
+                            <Lock className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
+                          )}
+                          <span className="truncate">{c[0]}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {i === 0 ? (
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              Free Preview
+                            </span>
+                          ) : !unlocked ? (
+                            <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-slate-800 text-amber-400/90 border border-amber-500/20 flex items-center gap-1">
+                              <Lock className="w-2.5 h-2.5" /> Locked
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-slate-500">
+                              Unlocked
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Book Reading Canvas */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 max-w-3xl mx-auto shadow-xl">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 max-w-3xl mx-auto shadow-sm">
+              <div className="border-b border-slate-800 pb-4 mb-6 flex justify-between items-center text-xs text-slate-500 uppercase tracking-widest">
+                <span>Reading Canvas</span>
+                <span>{selectedBook.format}</span>
+              </div>
               <div 
-                className="font-serif text-slate-200 leading-loose space-y-6"
+                className="prose prose-invert max-w-none text-slate-300 leading-relaxed space-y-4"
                 style={{ fontSize: `${fontSize}px` }}
               >
-                <h2 className="text-2xl font-bold font-sans text-center text-amber-400 mb-8">{bookText.chapter}</h2>
-                {bookText.paragraphs.map((p, i) => (<p key={i}>{p}</p>))}
+                <h2 className="text-xl font-bold text-white mb-2">{currentChapter ? currentChapter[0] : selectedBook.title}</h2>
+                <p>
+                  Welcome to the complete unabridged edition of <em>{selectedBook.title}</em> on Booksem.
+                  Use the player above to listen to the narration while you read along.
+                </p>
+                <p className="text-slate-400 italic">
+                  "{selectedBook.description}"
+                </p>
+                <div className="p-4 bg-slate-950/60 rounded-lg border border-slate-800 text-xs text-slate-400 space-y-1">
+                  <p><strong>Chapter Navigation:</strong> Use the previous/next track buttons or click any track in the tracklist to jump directly to that chapter.</p>
+                  <p><strong>Auto-Play:</strong> Tracks continuously advance to the next chapter automatically so you can binge-listen hands-free.</p>
+                  <p><strong>Bookmark Memory:</strong> Your book, chapter, and position are saved automatically in your browser.</p>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 4: INTERVIEW ROOM */}
-        {activeTab === 'interview' && (
+        {/* TAB 3: AUTHOR STUDIO */}
+        {activeTab === 'studio' && (
           <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Live Author Interview Room</h1>
-              <p className="text-slate-400 text-sm">Join live book discussions, author Q&As, and community book launches.</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-white">Author Recording Studio</h1>
+                <p className="text-slate-400 text-sm">Self-narrate your book using our high-definition browser audio recorder.</p>
+              </div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center max-w-xl mx-auto space-y-4">
-              <Video className="w-12 h-12 text-amber-400 mx-auto" />
-              <h2 className="text-xl font-bold text-white">Next Live Event Starting Soon</h2>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Connect with authors and fellow readers in real-time video audio discussions.
-              </p>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 max-w-xl mx-auto text-center space-y-6">
+              <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center mx-auto text-amber-400">
+                <Mic className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Direct-to-Booksem Narration</h3>
+                <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                  Record your audiobook chapter by chapter. Audio files are automatically synchronized with your manuscript e-book.
+                </p>
+              </div>
+              <div className="flex justify-center space-x-3">
+                <button 
+                  onClick={() => alert("Microphone access will initialize studio session.")}
+                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-lg transition"
+                >
+                  Start Recording Session
+                </button>
+              </div>
             </div>
           </div>
         )}
-      </main>
 
-      {/* 3. MODAL: UPLOAD WORK */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        {/* TAB 4: LIVE AUTHOR INTERVIEW */}
+        {activeTab === 'interview' && (
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">Upload Your Book or Audio</h2>
+              <div>
+                <h1 className="text-2xl font-bold text-white">Live Author Stage</h1>
+                <p className="text-slate-400 text-sm">Interactive broadcast rooms for book signings, readings, and live audience Q&A.</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 max-w-xl mx-auto text-center space-y-6">
+              <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center mx-auto text-amber-400">
+                <Video className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Next Live Event Starting Soon</h3>
+                <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                  Join upcoming live video interviews with featured authors and voice artists. Connect your microphone or submit questions via live chat.
+                </p>
+              </div>
               <button 
-                onClick={() => setShowUploadModal(false)}
-                className="text-slate-400 hover:text-white font-bold"
+                onClick={() => alert("You'll be notified when the next author interview begins!")}
+                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs rounded-lg transition border border-slate-700"
               >
-                ✕
+                Notify Me When Live
               </button>
             </div>
-            <p className="text-xs text-slate-400">
-              Submit your manuscript or recorded audio to sell on Booksem.
-            </p>
+          </div>
+        )}
+
+      </main>
+
+      {/* UPLOAD MODAL */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 text-white space-y-4">
+            <h3 className="text-lg font-bold">Publish to Booksem</h3>
+            <p className="text-xs text-slate-400">Upload your PDF/EPUB manuscript along with your audio chapters to monetize on Booksem.</p>
             <div className="space-y-3">
-              <input 
-                type="text" 
-                placeholder="Book Title" 
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
-              <input 
-                type="text" 
-                placeholder="Author Name" 
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
-              <input 
-                type="number" 
-                placeholder="Price ($USD) - enter 0 for Free" 
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
-              <div className="border-2 border-dashed border-slate-800 rounded-xl p-6 text-center hover:border-amber-500/50 cursor-pointer transition">
-                <Upload className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                <p className="text-xs text-slate-400">Drag & drop your PDF, EPUB, or MP3 file</p>
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Book Title</label>
+                <input type="text" placeholder="Enter title" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Price (USD)</label>
+                <input type="number" placeholder="4.99" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-sm" />
               </div>
             </div>
             <div className="flex justify-end space-x-2 pt-2">
@@ -825,6 +1090,94 @@ export default function BooksemApp() {
               >
                 Publish Book
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PAYWALL / UNLOCK MODAL */}
+      {showPaywallModal && paywallTargetBook && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 text-white shadow-2xl relative">
+            <button 
+              onClick={() => setShowPaywallModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center mb-6">
+              <span className="text-[11px] uppercase tracking-wider font-bold bg-amber-500/10 text-amber-400 px-3 py-1 rounded-full border border-amber-500/20 inline-flex items-center gap-1.5">
+                <Lock className="w-3 h-3" /> Chapter 1 Preview Complete
+              </span>
+              <h3 className="text-2xl font-bold mt-3 text-white">Unlock Full Audiobook & E-Book</h3>
+              <p className="text-slate-400 text-sm mt-1">
+                Continue reading & listening to <span className="text-amber-400 font-semibold">{paywallTargetBook.title}</span>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              {/* Option A: Buy this single book */}
+              <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
+                <div>
+                  <div className="text-xs uppercase font-semibold text-slate-400 tracking-wider">A La Carte</div>
+                  <h4 className="font-bold text-white text-base mt-1">Buy This Book</h4>
+                  <div className="text-3xl font-extrabold text-amber-400 mt-2">${paywallTargetBook.price}</div>
+                  <p className="text-xs text-slate-400 mt-1">One-time payment. Permanent lifetime access to all chapters & audio.</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    unlockBook(paywallTargetBook.id);
+                    setShowPaywallModal(false);
+                    if (selectedBookId === paywallTargetBook.id) {
+                      setIsPlayingAudio(true);
+                      if (audioRef.current) audioRef.current.play().catch(() => {});
+                    }
+                  }}
+                  className="mt-5 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 rounded-lg transition shadow-md shadow-amber-500/20"
+                >
+                  Buy for ${paywallTargetBook.price}
+                </button>
+              </div>
+
+              {/* Option B: All-Access Monthly Pass */}
+              <div className="bg-gradient-to-b from-amber-500/10 via-slate-950/80 to-slate-950/80 border border-amber-500/40 rounded-xl p-4 flex flex-col justify-between relative shadow-lg">
+                <span className="absolute -top-2.5 right-3 bg-amber-500 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
+                  Best Value
+                </span>
+                <div>
+                  <div className="text-xs uppercase font-semibold text-amber-400 tracking-wider flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" /> Unlimited
+                  </div>
+                  <h4 className="font-bold text-white text-base mt-1">All-Access Pass</h4>
+                  <div className="text-3xl font-extrabold text-white mt-2">
+                    $9.99<span className="text-xs font-normal text-slate-400">/mo</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">Unlimited streaming of all 12 complete audiobooks & future releases.</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setHasMonthlyPass(true);
+                    localStorage.setItem('booksem_has_pass', 'true');
+                    setShowPaywallModal(false);
+                    if (selectedBookId === paywallTargetBook.id) {
+                      setIsPlayingAudio(true);
+                      if (audioRef.current) audioRef.current.play().catch(() => {});
+                    }
+                  }}
+                  className="mt-5 w-full bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs py-2.5 rounded-lg transition"
+                >
+                  Start Monthly Pass
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Secure 256-bit checkout
+              </span>
+              <span className="text-slate-500">Cancel pass anytime</span>
             </div>
           </div>
         </div>
