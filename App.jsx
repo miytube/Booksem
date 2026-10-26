@@ -7,6 +7,7 @@ import {
   Lock, Unlock, Sparkles, Check, X, Loader2
 } from 'lucide-react';
 
+const STRIPE_ALL_ACCESS_URL = 'https://buy.stripe.com/cNi5kwgEae2K0M88Qw6kg00';
 export default function BooksemApp() {
   const [activeTab, setActiveTab] = useState('marketplace');
   const [showUploadModal, setShowUploadModal] = useState(false);
