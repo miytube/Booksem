@@ -8,6 +8,9 @@ import {
 } from 'lucide-react';
 
 const STRIPE_ALL_ACCESS_URL = 'https://buy.stripe.com/cNi5kwgEae2K0M88Qw6kg00';
+const STRIPE_SINGLE_BOOK_URLS = {
+  '1': 'https://buy.stripe.com/8x27sE73A4sa0M8giY6kg01', // The Art of War ($3.99)
+};
 export default function BooksemApp() {
   const [activeTab, setActiveTab] = useState('marketplace');
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -57,6 +60,15 @@ export default function BooksemApp() {
       localStorage.setItem('booksem_has_pass', 'true');
       window.history.replaceState({}, '', window.location.pathname);
       alert('Thank you! Your Booksem All-Access Pass is active. Enjoy every audiobook.');
+    } else if (params.get('payment') === 'success' && params.get('book_id')) {
+      const bid = params.get('book_id');
+      setUnlockedBooks(prev => {
+        const updated = prev.includes(bid) ? prev : [...prev, bid];
+        localStorage.setItem('booksem_unlocked_books', JSON.stringify(updated));
+        return updated;
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+      alert('Thank you! Your purchase is complete. This audiobook is now unlocked.');
     }
   }, []);
 
@@ -1213,12 +1225,21 @@ export default function BooksemApp() {
                   <div className="text-3xl font-extrabold text-amber-400 mt-2">${paywallTargetBook.price}</div>
                   <p className="text-xs text-slate-400 mt-1">One-time payment. Permanent lifetime access to all chapters & audio.</p>
                 </div>
-                <button 
-                  disabled
-                  className="mt-5 w-full bg-slate-800 text-slate-400 font-bold text-xs py-2.5 rounded-lg cursor-not-allowed"
-                >
-                  Single-book purchase coming soon
-                </button>
+                {STRIPE_SINGLE_BOOK_URLS[paywallTargetBook.id] ? (
+                  <button 
+                    onClick={() => { window.location.href = STRIPE_SINGLE_BOOK_URLS[paywallTargetBook.id]; }}
+                    className="mt-5 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 rounded-lg shadow transition"
+                  >
+                    Buy for ${paywallTargetBook.price} (Stripe)
+                  </button>
+                ) : (
+                  <button 
+                    disabled
+                    className="mt-5 w-full bg-slate-800 text-slate-400 font-bold text-xs py-2.5 rounded-lg cursor-not-allowed"
+                  >
+                    Single-book purchase coming soon
+                  </button>
+                )}
               </div>
 
               {/* Option B: All-Access Monthly Pass */}
