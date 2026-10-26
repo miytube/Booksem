@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   BookOpen, Headphones, Mic, PenTool, ShoppingBag,
   Play, Pause, Star, Upload, Search, MessageSquare,
   Video, Users, Volume2, ShieldCheck, Heart, Share2,
-  CheckCircle, ArrowRight
+  CheckCircle, ArrowRight, SkipBack, SkipForward, RotateCcw, RotateCw, Moon, List
 } from 'lucide-react';
 
 export default function BooksemApp() {
@@ -17,7 +17,14 @@ export default function BooksemApp() {
   const [fontSize, setFontSize] = useState(18); // px
 
   const audioRef = useRef(null);
-  const [selectedBookId, setSelectedBookId] = useState('1');
+  const savedState = (() => { try { return JSON.parse(localStorage.getItem('booksem_player') || '{}'); } catch { return {}; } })();
+  const [selectedBookId, setSelectedBookId] = useState(savedState.bookId || '1');
+  const [chapterIdx, setChapterIdx] = useState(0);
+  const [sleepMode, setSleepMode] = useState(null); // null | minutes number | 'chapter'
+  const [sleepEndsAt, setSleepEndsAt] = useState(null);
+  const [showChapters, setShowChapters] = useState(true);
+  const resumeTimeRef = useRef(0);
+  const autoPlayRef = useRef(false);
 
   const sampleBooks = [
     {
@@ -166,6 +173,7 @@ export default function BooksemApp() {
     }
   ];
 
+
   const BOOK_TEXT = {
     "The Art of War": {
       "chapter": "Chapter 1: Laying Plans",
@@ -226,7 +234,7 @@ export default function BooksemApp() {
       "chapter": "Chapter 1: Jonathan Harker's Journal",
       "paragraphs": [
         "Left Munich at 8:35 P.M., on 1st May, arriving at Vienna early next morning; should have arrived at 6:46, but train was an hour late.",
-        "Buda-Pesth seems a wonderful place, from the glimpse which I got of it from the train and the little I could walk through the streets. I feared to go very far from the station, as we arrived late and would start as near the correct time as possible."
+        "Buda-Pesth seems a wonderful place, from the glimpse which I got of it from the train and the little I could walk through the streets. I feared to go very far from the station, as we had arrived late and would start as near the correct time as possible."
       ]
     },
     "The Great Gatsby": {
@@ -258,34 +266,108 @@ export default function BooksemApp() {
       ]
     }
   };
-
-  const AUDIO_URLS = {
-    '1': 'https://archive.org/download/art_of_war_librivox/art_of_war_01-02_sun_tzu.mp3',
-    '2': 'https://archive.org/download/think-and-grow-rich_202408/Think%20and%20Grow%20Rich%20-%20Chapter%201%20Part%201.mp3',
-    '3': 'https://archive.org/download/meditations_0708_librivox/meditations_01_marcusaurelius.mp3',
-    '4': 'https://archive.org/download/pride_prejudice_1102_librivox/prideandprejudice_01_austen.mp3',
-    '5': 'https://archive.org/download/prince_pa_librivox/prince_01_machiavelli.mp3',
-    '6': 'https://archive.org/download/frankenstein_cs_librivox/frankenstein_01_shelley.mp3',
-    '7': 'https://archive.org/download/TheScienceofGettingRich/01_Preface.mp3',
-    '8': 'https://archive.org/download/dracula_librivox/dracula_01_stoker.mp3',
-    '9': 'https://archive.org/download/thegreatgatsbyversion4_2402_librivox/greatgatsby4_00_fitzgerald_128kb.mp3',
-    '10': 'https://archive.org/download/tale_two_cities_librivox/tale_of_two_cities_01_dickens.mp3',
-    '11': 'https://archive.org/download/picture_dorian_gray_1204_librivox/pictureofdoriangray_01_wilde.mp3',
-    '12': 'https://archive.org/download/prophet1_1901_librivox/prophet1_01_gibran.mp3'
-  };
+  const AUDIOBOOKS = {"1": {"base": "https://archive.org/download/art_of_war_librivox/", "chapters": [["1 Laying Plans - 2 Waging War", "art_of_war_01-02_sun_tzu.mp3"], ["3 Attack By Stratagem - 4 Tactical Dispositions", "art_of_war_03-04_sun_tzu.mp3"], ["5 Energy - 6 Weak Points and Strong", "art_of_war_05-06_sun_tzu.mp3"], ["7 Maneuvering - 8 Variation in Tactics", "art_of_war_07-08_sun_tzu.mp3"], ["9 The Army on the March - 10 Terrain", "art_of_war_09-10_sun_tzu.mp3"], ["11 The Nine Situations", "art_of_war_11_sun_tzu.mp3"], ["12 The Attack By Fire - 13 The Use of Spies", "art_of_war_12-13_sun_tzu.mp3"]]}, "2": {"base": "https://archive.org/download/think-and-grow-rich_202408/", "chapters": [["Chapter 0 Part 2 (What Do You Want Most)", "Think and Grow Rich - Chapter 0 Part 2 (What Do You Want Most).mp3"], ["Chapter 0 Part 3 (Author Tributes)", "Think and Grow Rich - Chapter 0 Part 3 (Author Tributes).mp3"], ["Chapter 0 Part 4 (Publisher's Preface)", "Think and Grow Rich - Chapter 0 Part 4 (Publisher's Preface).mp3"], ["Chapter 0 Part 5 (Author's Preface Part 1)", "Think and Grow Rich - Chapter 0 Part 5 (Author's Preface Part 1).mp3"], ["Chapter 0 Part 6 (Author's Preface Part 2)", "Think and Grow Rich - Chapter 0 Part 6 (Author's Preface Part 2).mp3"], ["Chapter 0 Part 7 (Author's Preface Part 3)", "Think and Grow Rich - Chapter 0 Part 7 (Author's Preface Part 3).mp3"], ["Chapter 1 Part 1", "Think and Grow Rich - Chapter 1 Part 1.mp3"], ["Chapter 1 Part 2", "Think and Grow Rich - Chapter 1 Part 2.mp3"], ["Chapter 1 Part 3", "Think and Grow Rich - Chapter 1 Part 3.mp3"], ["Chapter 1 Part 4", "Think and Grow Rich - Chapter 1 Part 4.mp3"], ["Chapter 1 Part 5", "Think and Grow Rich - Chapter 1 Part 5.mp3"], ["Chapter 2 Part 1", "Think and Grow Rich - Chapter 2 Part 1.mp3"], ["Chapter 2 Part 2", "Think and Grow Rich - Chapter 2 Part 2.mp3"], ["Chapter 2 Part 3", "Think and Grow Rich - Chapter 2 Part 3.mp3"], ["Chapter 2 Part 4", "Think and Grow Rich - Chapter 2 Part 4.mp3"], ["Chapter 2 Part 5", "Think and Grow Rich - Chapter 2 Part 5.mp3"], ["Chapter 2 Part 6", "Think and Grow Rich - Chapter 2 Part 6.mp3"], ["Chapter 2 Part 7", "Think and Grow Rich - Chapter 2 Part 7.mp3"], ["Chapter 3 Part 1", "Think and Grow Rich - Chapter 3 Part 1.mp3"], ["Chapter 3 Part 2", "Think and Grow Rich - Chapter 3 Part 2.mp3"], ["Chapter 3 Part 3", "Think and Grow Rich - Chapter 3 Part 3.mp3"], ["Chapter 3 Part 4", "Think and Grow Rich - Chapter 3 Part 4.mp3"], ["Chapter 3 Part 5", "Think and Grow Rich - Chapter 3 Part 5.mp3"], ["Chapter 3 Part 6", "Think and Grow Rich - Chapter 3 Part 6.mp3"], ["Chapter 3 Part 7", "Think and Grow Rich - Chapter 3 Part 7.mp3"], ["Chapter 4 Part 1", "Think and Grow Rich - Chapter 4 Part 1.mp3"], ["Chapter 4 Part 2", "Think and Grow Rich - Chapter 4 Part 2.mp3"], ["Chapter 5 Part 1", "Think and Grow Rich - Chapter 5 Part 1.mp3"], ["Chapter 5 Part 2", "Think and Grow Rich - Chapter 5 Part 2.mp3"], ["Chapter 5 Part 3", "Think and Grow Rich - Chapter 5 Part 3.mp3"], ["Chapter 5 Part 4", "Think and Grow Rich - Chapter 5 Part 4.mp3"], ["Chapter 5 Part 5", "Think and Grow Rich - Chapter 5 Part 5.mp3"], ["Chapter 6 Part 1", "Think and Grow Rich - Chapter 6 Part 1.mp3"], ["Chapter 6 Part 2", "Think and Grow Rich - Chapter 6 Part 2.mp3"], ["Chapter 6 Part 3", "Think and Grow Rich - Chapter 6 Part 3.mp3"], ["Chapter 6 Part 4", "Think and Grow Rich - Chapter 6 Part 4.mp3"], ["Chapter 6 Part 5", "Think and Grow Rich - Chapter 6 Part 5.mp3"], ["Chapter 7 Part 1", "Think and Grow Rich - Chapter 7 Part 1.mp3"], ["Chapter 7 Part 2", "Think and Grow Rich - Chapter 7 Part 2.mp3"], ["Chapter 7 Part 3", "Think and Grow Rich - Chapter 7 Part 3.mp3"], ["Chapter 7 Part 4", "Think and Grow Rich - Chapter 7 Part 4.mp3"], ["Chapter 7 Part 5", "Think and Grow Rich - Chapter 7 Part 5.mp3"], ["Chapter 7 Part 6", "Think and Grow Rich - Chapter 7 Part 6.mp3"], ["Chapter 7 Part 7", "Think and Grow Rich - Chapter 7 Part 7.mp3"], ["Chapter 7 Part 8", "Think and Grow Rich - Chapter 7 Part 8.mp3"], ["Chapter 7 Part 9", "Think and Grow Rich - Chapter 7 Part 9.mp3"], ["Chapter 7 Part 10", "Think and Grow Rich - Chapter 7 Part 10.mp3"], ["Chapter 7 Part 11", "Think and Grow Rich - Chapter 7 Part 11.mp3"], ["Chapter 7 Part 12", "Think and Grow Rich - Chapter 7 Part 12.mp3"], ["Chapter 7 Part 13", "Think and Grow Rich - Chapter 7 Part 13.mp3"], ["Chapter 7 Part 14", "Think and Grow Rich - Chapter 7 Part 14.mp3"], ["Chapter 7 Part 15", "Think and Grow Rich - Chapter 7 Part 15.mp3"], ["Chapter 8 Part 1", "Think and Grow Rich - Chapter 8 Part 1.mp3"], ["Chapter 8 Part 2", "Think and Grow Rich - Chapter 8 Part 2.mp3"], ["Chapter 8 Part 3", "Think and Grow Rich - Chapter 8 Part 3.mp3"], ["Chapter 8 Part 4", "Think and Grow Rich - Chapter 8 Part 4.mp3"], ["Chapter 9 Part 1", "Think and Grow Rich - Chapter 9 Part 1.mp3"], ["Chapter 9 Part 2", "Think and Grow Rich - Chapter 9 Part 2.mp3"], ["Chapter 9 Part 3", "Think and Grow Rich - Chapter 9 Part 3.mp3"], ["Chapter 9 Part 4", "Think and Grow Rich - Chapter 9 Part 4.mp3"], ["Chapter 9 Part 5", "Think and Grow Rich - Chapter 9 Part 5.mp3"], ["Chapter 9 Part 6", "Think and Grow Rich - Chapter 9 Part 6.mp3"], ["Chapter 10 Part 1", "Think and Grow Rich - Chapter 10 Part 1.mp3"], ["Chapter 10 Part 2", "Think and Grow Rich - Chapter 10 Part 2.mp3"], ["Chapter 11 Part 1", "Think and Grow Rich - Chapter 11 Part 1.mp3"], ["Chapter 11 Part 2", "Think and Grow Rich - Chapter 11 Part 2.mp3"], ["Chapter 11 Part 3", "Think and Grow Rich - Chapter 11 Part 3.mp3"], ["Chapter 11 Part 4", "Think and Grow Rich - Chapter 11 Part 4.mp3"], ["Chapter 11 Part 5", "Think and Grow Rich - Chapter 11 Part 5.mp3"], ["Chapter 11 Part 6", "Think and Grow Rich - Chapter 11 Part 6.mp3"], ["Chapter 11 Part 7", "Think and Grow Rich - Chapter 11 Part 7.mp3"], ["Chapter 11 Part 8", "Think and Grow Rich - Chapter 11 Part 8.mp3"], ["Chapter 12 Part 1", "Think and Grow Rich - Chapter 12 Part 1.mp3"], ["Chapter 12 Part 2", "Think and Grow Rich - Chapter 12 Part 2.mp3"], ["Chapter 12 Part 3", "Think and Grow Rich - Chapter 12 Part 3.mp3"], ["Chapter 13 Part 1", "Think and Grow Rich - Chapter 13 Part 1.mp3"], ["Chapter 13 Part 2", "Think and Grow Rich - Chapter 13 Part 2.mp3"], ["Chapter 14 Part 1", "Think and Grow Rich - Chapter 14 Part 1.mp3"], ["Chapter 14 Part 2", "Think and Grow Rich - Chapter 14 Part 2.mp3"], ["Chapter 14 Part 3", "Think and Grow Rich - Chapter 14 Part 3.mp3"], ["Chapter 14 Part 4", "Think and Grow Rich - Chapter 14 Part 4.mp3"], ["Chapter 15 Part 1", "Think and Grow Rich - Chapter 15 Part 1.mp3"], ["Chapter 15 Part 2", "Think and Grow Rich - Chapter 15 Part 2.mp3"], ["Chapter 15 Part 3", "Think and Grow Rich - Chapter 15 Part 3.mp3"], ["Chapter 15 Part 4", "Think and Grow Rich - Chapter 15 Part 4.mp3"], ["Chapter 15 Part 5", "Think and Grow Rich - Chapter 15 Part 5.mp3"], ["Chapter 15 Part 6", "Think and Grow Rich - Chapter 15 Part 6.mp3"], ["Chapter 15 Part 7", "Think and Grow Rich - Chapter 15 Part 7.mp3"], ["Chapter 15 Part 8", "Think and Grow Rich - Chapter 15 Part 8.mp3"], ["Chapter 15 Part 9", "Think and Grow Rich - Chapter 15 Part 9.mp3"], ["Chapter 15 Part 10", "Think and Grow Rich - Chapter 15 Part 10.mp3"], ["Chapter 15 Part 11", "Think and Grow Rich - Chapter 15 Part 11.mp3"], ["Chapter 15 Part 12", "Think and Grow Rich - Chapter 15 Part 12.mp3"]]}, "3": {"base": "https://archive.org/download/meditations_0708_librivox/", "chapters": [["00 - Introduction", "meditations_00_marcusaurelius.mp3"], ["01 - Section 01", "meditations_01_marcusaurelius.mp3"], ["02 - Section 02", "meditations_02_marcusaurelius.mp3"], ["03 - Section 03", "meditations_03_marcusaurelius.mp3"], ["04 - Section 04", "meditations_04_marcusaurelius.mp3"], ["05 - Section 05", "meditations_05_marcusaurelius.mp3"], ["06 - Section 06", "meditations_06_marcusaurelius.mp3"], ["07 - Section 07", "meditations_07_marcusaurelius.mp3"], ["08 - Section 08", "meditations_08_marcusaurelius.mp3"], ["09 - Section 09", "meditations_09_marcusaurelius.mp3"], ["10 - Section 10", "meditations_10_marcusaurelius.mp3"], ["11 - Section 11", "meditations_11_marcusaurelius.mp3"], ["12 - Section 12", "meditations_12_marcusaurelius.mp3"], ["13 - M. Aurelius Antoninus, by George Long M.A.", "meditations_13_marcusaurelius.mp3"], ["14 - The Philosophy of Marcus Aurelius by George Long", "meditations_14_marcusaurelius.mp3"]]}, "4": {"base": "https://archive.org/download/pride_prejudice_1102_librivox/", "chapters": [["01- Chapters 1-2", "prideandprejudice_01_austen.mp3"], ["02 - Chapter 3", "prideandprejudice_02_austen.mp3"], ["03 - Chapters 4-5", "prideandprejudice_03_austen.mp3"], ["04 - Chapter 6", "prideandprejudice_04_austen.mp3"], ["05 - Chapter 7", "prideandprejudice_05_austen.mp3"], ["06 - Chapter 8", "prideandprejudice_06_austen.mp3"], ["07 - Chapter 9", "prideandprejudice_07_austen.mp3"], ["08 - Chapter 10", "prideandprejudice_08_austen.mp3"], ["09 - Chapter 11", "prideandprejudice_09_austen.mp3"], ["10 - Chapters 12-13", "prideandprejudice_10_austen.mp3"], ["11 - Chapters 14-15", "prideandprejudice_11_austen.mp3"], ["12 - Chapter 16", "prideandprejudice_12_austen.mp3"], ["13 - Chapter 17", "prideandprejudice_13_austen.mp3"], ["14 - Chapter 18", "prideandprejudice_14_austen.mp3"], ["15 - Chapter 19", "prideandprejudice_15_austen.mp3"], ["16 - Chapter 20", "prideandprejudice_16_austen.mp3"], ["17 - Chapter 21", "prideandprejudice_17_austen.mp3"], ["18 - Chapter 22", "prideandprejudice_18_austen.mp3"], ["19 - Chapter 23", "prideandprejudice_19_austen.mp3"], ["20 - Chapter 24", "prideandprejudice_20_austen.mp3"], ["21 - Chapter 25", "prideandprejudice_21_austen.mp3"], ["22 - Chapter 26", "prideandprejudice_22_austen.mp3"], ["23 - Chapter 27", "prideandprejudice_23_austen.mp3"], ["24 - Chapter 28", "prideandprejudice_24_austen.mp3"], ["25 - Chapter 29", "prideandprejudice_25_austen.mp3"], ["26 - Chapter 30", "prideandprejudice_26_austen.mp3"], ["27 - Chapter 31", "prideandprejudice_27_austen.mp3"], ["28 - Chapter 32", "prideandprejudice_28_austen.mp3"], ["29 - Chapter 33", "prideandprejudice_29_austen.mp3"], ["30 - Chapter 34", "prideandprejudice_30_austen.mp3"], ["31 - Chapter 35", "prideandprejudice_31_austen.mp3"], ["32 - Chapter 36", "prideandprejudice_32_austen.mp3"], ["33 - Chapter 37", "prideandprejudice_33_austen.mp3"], ["34 - Chapter 38", "prideandprejudice_34_austen.mp3"], ["35 - Chapter 39", "prideandprejudice_35_austen.mp3"], ["36 - Chapter 40", "prideandprejudice_36_austen.mp3"], ["37 - Chapter 41", "prideandprejudice_37_austen.mp3"], ["38 - Chapter 42", "prideandprejudice_38_austen.mp3"], ["39 - Chapter 43", "prideandprejudice_39_austen.mp3"], ["40 - Chapter 44", "prideandprejudice_40_austen.mp3"], ["41 - Chapter 45", "prideandprejudice_41_austen.mp3"], ["42 - Chapter 46", "prideandprejudice_42_austen.mp3"], ["43 - Chapter 47", "prideandprejudice_43_austen.mp3"], ["44 - Chapter 48", "prideandprejudice_44_austen.mp3"], ["45 - Chapter 49", "prideandprejudice_45_austen.mp3"], ["46 - Chapter 50", "prideandprejudice_46_austen.mp3"], ["47 - Chapter 51", "prideandprejudice_47_austen.mp3"], ["48 - Chapter 52", "prideandprejudice_48_austen.mp3"], ["49 - Chapter 53", "prideandprejudice_49_austen.mp3"], ["50 - Chapter 54", "prideandprejudice_50_austen.mp3"], ["51 - Chapter 55", "prideandprejudice_51_austen.mp3"], ["52 - Chapter 56", "prideandprejudice_52_austen.mp3"], ["53 - Chapter 57", "prideandprejudice_53_austen.mp3"], ["54 - Chapter 58", "prideandprejudice_54_austen.mp3"], ["55 - Chapter 59", "prideandprejudice_55_austen.mp3"], ["56 - Chapter 60", "prideandprejudice_56_austen.mp3"], ["57 - Chapter 61", "prideandprejudice_57_austen.mp3"]]}, "5": {"base": "https://archive.org/download/prince_pa_librivox/", "chapters": [["00 - The Prince - Front matter", "prince_00_machiavelli.mp3"], ["01 - The Prince - Ch. 01-03", "prince_01_machiavelli.mp3"], ["02 - The Prince - Ch. 04-06", "prince_02_machiavelli.mp3"], ["03 - The Prince - Ch. 07-08", "prince_03_machiavelli.mp3"], ["04 - The Prince - Ch. 09-11", "prince_04_machiavelli.mp3"], ["05 - The Prince - Ch. 12-13", "prince_05_machiavelli.mp3"], ["06 - The Prince - Ch. 14-16", "prince_06_machiavelli.mp3"], ["07 - The Prince - Ch. 17-18", "prince_07_machiavelli.mp3"], ["08 - The Prince - Ch. 19", "prince_08_machiavelli.mp3"], ["09 - The Prince - Ch. 20-22", "prince_09_machiavelli.mp3"], ["10 - The Prince - Ch. 23-26", "prince_10_machiavelli.mp3"], ["11 - The Prince - Appendix 1", "prince_11_machiavelli.mp3"], ["12 - The Life of Castruccio Castracani of Lucca - Part 1", "prince_12_machiavelli.mp3"], ["13 - The Life of Castruccio Castracani of Lucca - Part 2", "prince_13_machiavelli.mp3"]]}, "6": {"base": "https://archive.org/download/frankenstein_cs_librivox/", "chapters": [["01 - Dedication and Preface", "frankenstein_01_shelley.mp3"], ["02 - Vol. I, Letter I", "frankenstein_02_shelley.mp3"], ["03 - Vol. I, Letter II", "frankenstein_03_shelley.mp3"], ["04 - Vol. I, Letter III", "frankenstein_04_shelley.mp3"], ["05 - Vol. I, Letter IV", "frankenstein_05_shelley.mp3"], ["06 - Vol. I, Chapter I", "frankenstein_06_shelley.mp3"], ["07 - Vol. I, Chapter II", "frankenstein_07_shelley.mp3"], ["08 - Vol. I, Chapter III", "frankenstein_08_shelley.mp3"], ["09 - Vol. I, Chapter IV", "frankenstein_09_shelley.mp3"], ["10 - Vol. I, Chapter V", "frankenstein_10_shelley.mp3"], ["11 - Vol. I, Chapter VI", "frankenstein_11_shelley.mp3"], ["12 - Vol. I, Chapter VII", "frankenstein_12_shelley.mp3"], ["13 - Vol. II, Chapter I", "frankenstein_13_shelley.mp3"], ["14 - Vol. II, Chapter II", "frankenstein_14_shelley.mp3"], ["15 - Vol. II, Chapter III", "frankenstein_15_shelley.mp3"], ["16 - Vol. II, Chapter IV", "frankenstein_16_shelley.mp3"], ["17 - Vol. II, Chapter V", "frankenstein_17_shelley.mp3"], ["18 - Vol. II, Chapter VI", "frankenstein_18_shelley.mp3"], ["19 - Vol. II, Chapter VII", "frankenstein_19_shelley.mp3"], ["20 - Vol. II, Chapter VIII", "frankenstein_20_shelley.mp3"], ["21 - Vol. II, Chapter IX", "frankenstein_21_shelley.mp3"], ["22 - Vol. III, Chapter I", "frankenstein_22_shelley.mp3"], ["23 - Vol. III, Chapter II", "frankenstein_23_shelley.mp3"], ["24 - Vol. III, Chapter III", "frankenstein_24_shelley.mp3"], ["25 - Vol. III, Chapter IV", "frankenstein_25_shelley.mp3"], ["26 - Vol. III, Chapter V", "frankenstein_26_shelley.mp3"], ["27 - Vol. III, Chapter VI", "frankenstein_27_shelley.mp3"], ["28 - Vol. III, Chapter VII", "frankenstein_28_shelley.mp3"], ["29 - Vol. III, Letters", "frankenstein_29_shelley.mp3"]]}, "7": {"base": "https://archive.org/download/TheScienceofGettingRich/", "chapters": [["Science of Getting Rich - Preface", "01_Preface.mp3"], ["Science of Getting Rich - Chapter 1: The Right to Be Rich", "02_ChapterOne.mp3"], ["Science of Getting Rich - Chapter 2: There Is a Science of Getting Rich", "03_ChapterTwo.mp3"], ["Science of Getting Rich - Chapter 3: Is Opportunity Monopolized?", "04_ChapterThree.mp3"], ["Science of Getting Rich - Chapter 4: The First Principle in The Science of Getting Rich", "05_ChapterFour.mp3"], ["Science of Getting Rich - Chapter 5: Increasing Life", "06_ChapterFive.mp3"], ["Science of Getting Rich - Chapter 6: How Riches Come to You", "07_ChapterSix.mp3"], ["Science of Getting Rich - Chapter 7: Gratitude", "08_ChapterSeven.mp3"], ["Science of Getting Rich - Chapter 8: Thinking in the Certain Way", "09_ChapterEight.mp3"], ["Science of Getting Rich - Chapter 9: How to Use the Will", "10_ChapterNine.mp3"], ["Science of Getting Rich - Chapter 10: Further Use of the Will", "11_ChapterTen.mp3"], ["Science of Getting Rich - Chapter 11: Acting in the Certain Way", "12_ChapterEleven.mp3"], ["Science of Getting Rich - Chapter 12: Efficient Action", "13_ChapterTwelve.mp3"], ["Science of Getting Rich - Chapter 13: Getting Into the Right Business", "14_ChapterThirteen.mp3"], ["Science of Getting Rich - Chapter 14: The Impression of Increase", "15_ChapterFourteen.mp3"], ["Science of Getting Rich - Chapter 15: The Advancing Man", "16_ChapterFifteen.mp3"], ["Science of Getting Rich - Chapter 16: Some Cautions, and Concluding Observations", "17_ChapterSixteen.mp3"], ["Science of Getting Rich - Chapter 17: Summary of the Science of Getting Rich", "18_ChapterSeventeen.mp3"]]}, "8": {"base": "https://archive.org/download/dracula_librivox/", "chapters": [["Chapter 01", "dracula_01_stoker.mp3"], ["Chapter 02", "dracula_02_stoker.mp3"], ["Chapter 03", "dracula_03_stoker.mp3"], ["Chapter 04", "dracula_04_stoker.mp3"], ["Chapter 05", "dracula_05_stoker.mp3"], ["Chapter 06", "dracula_06_stoker.mp3"], ["Chapter 07", "dracula_07_stoker.mp3"], ["Chapter 08", "dracula_08_stoker.mp3"], ["Chapter 09", "dracula_09_stoker.mp3"], ["Chapter 10", "dracula_10_stoker.mp3"], ["Chapter 11", "dracula_11_stoker.mp3"], ["Chapter 12", "dracula_12_stoker.mp3"], ["Chapter 13", "dracula_13_stoker.mp3"], ["Chapter 14", "dracula_14_stoker.mp3"], ["Chapter 15", "dracula_15_stoker.mp3"], ["Chapter 16", "dracula_16_stoker.mp3"], ["Chapter 17", "dracula_17_stoker.mp3"], ["Chapter 18", "dracula_18_stoker.mp3"], ["Chapter 19", "dracula_19_stoker.mp3"], ["Chapter 20", "dracula_20_stoker.mp3"], ["Chapter 21", "dracula_21_stoker.mp3"], ["Chapter 22", "dracula_22_stoker.mp3"], ["Chapter 23", "dracula_23_stoker.mp3"], ["Chapter 24", "dracula_24_stoker.mp3"], ["Chapter 25", "dracula_25_stoker.mp3"], ["Chapter 26", "dracula_26_stoker.mp3"], ["Chapter 27", "dracula_27_stoker.mp3"]]}, "9": {"base": "https://archive.org/download/thegreatgatsbyversion4_2402_librivox/", "chapters": [["00 - Introduction", "greatgatsby4_00_fitzgerald.mp3"], ["01 - Chapter 1", "greatgatsby4_01_fitzgerald.mp3"], ["02 - Chapter 2", "greatgatsby4_02_fitzgerald.mp3"], ["03 - Chapter 3", "greatgatsby4_03_fitzgerald.mp3"], ["04 - Chapter 4", "greatgatsby4_04_fitzgerald.mp3"], ["05 - Chapter 5", "greatgatsby4_05_fitzgerald.mp3"], ["06 - Chapter 6", "greatgatsby4_06_fitzgerald.mp3"], ["07 - Chapter 7", "greatgatsby4_07_fitzgerald.mp3"], ["08 - Chapter 8", "greatgatsby4_08_fitzgerald.mp3"], ["09 - Chapter 9", "greatgatsby4_09_fitzgerald.mp3"]]}, "10": {"base": "https://archive.org/download/tale_two_cities_librivox/", "chapters": [["Bk1 Ch01 - The Period", "tale_of_two_cities_01_dickens.mp3"], ["Bk1 Ch02 - The Mail", "tale_of_two_cities_02_dickens.mp3"], ["Bk1 Ch03 - The Night Shadows", "tale_of_two_cities_03_dickens.mp3"], ["Bk1 Ch04 - The Preparation", "tale_of_two_cities_04_dickens.mp3"], ["Bk1 Ch05 - The Wine Shop", "tale_of_two_cities_05_dickens.mp3"], ["Bk1 Ch06 - The Shoemaker", "tale_of_two_cities_06_dickens.mp3"], ["Bk2 Ch01 - Five Years Later", "tale_of_two_cities_07_dickens.mp3"], ["Bk2 Ch02 - A Sight", "tale_of_two_cities_08_dickens.mp3"], ["Bk2 Ch03 - A Disappointment", "tale_of_two_cities_09_dickens.mp3"], ["Bk2 Ch04 - Congratulatory", "tale_of_two_cities_10_dickens.mp3"], ["Bk2 Ch05 - The Jackal", "tale_of_two_cities_11_dickens.mp3"], ["Bk2 Ch06 - Hundreds of People", "tale_of_two_cities_12_dickens.mp3"], ["Bk2 Ch07 - Monseigneur in Town", "tale_of_two_cities_13_dickens.mp3"], ["Bk2 Ch08 - Monseigneur in the Country", "tale_of_two_cities_14_dickens.mp3"], ["Bk2 Ch09 - The Gorgon's Head", "tale_of_two_cities_15_dickens.mp3"], ["Bk2 Ch10 - Two Promises", "tale_of_two_cities_16_dickens.mp3"], ["Bk2 Ch11 - A Companion Picture", "tale_of_two_cities_17_dickens.mp3"], ["Bk2 Ch12 - The Fellow of Delicacy", "tale_of_two_cities_18_dickens.mp3"], ["Bk2 Ch13 - The Fellow of no Delicacy", "tale_of_two_cities_19_dickens.mp3"], ["Bk2 Ch14 - The Honest Tradesman", "tale_of_two_cities_20_dickens.mp3"], ["Bk2 Ch15 - Knitting", "tale_of_two_cities_21_dickens.mp3"], ["Bk2 Ch16 - Still Knitting", "tale_of_two_cities_22_dickens.mp3"], ["Bk2 Ch17 - One Night", "tale_of_two_cities_23_dickens.mp3"], ["Bk2 Ch18 - Nine Days", "tale_of_two_cities_24_dickens.mp3"], ["Bk2 Ch19 - An Opinion", "tale_of_two_cities_25_dickens.mp3"], ["Bk2 Ch20 - A Plea", "tale_of_two_cities_26_dickens.mp3"], ["Bk2 Ch21 - Echoing Footsteps", "tale_of_two_cities_27_dickens.mp3"], ["Bk2 Ch22 - The Sea Still Rises", "tale_of_two_cities_28_dickens.mp3"], ["Bk2 Ch23 - Fire Rises", "tale_of_two_cities_29_dickens.mp3"], ["Bk2 Ch24 - Drawn to the Loadstone Rock", "tale_of_two_cities_30_dickens.mp3"], ["Bk3 Ch01 - In Secret", "tale_of_two_cities_31_dickens.mp3"], ["Bk3 Ch02 - The Grindstone", "tale_of_two_cities_32_dickens.mp3"], ["Bk3 Ch03 - The Shadow", "tale_of_two_cities_33_dickens.mp3"], ["Bk3 Ch04 - Calm in Storm", "tale_of_two_cities_34_dickens.mp3"], ["Bk3 Ch05 - The Wood Sawyer", "tale_of_two_cities_35_dickens.mp3"], ["Bk3 Ch06 - Triumph", "tale_of_two_cities_36_dickens.mp3"], ["Bk3 Ch07 - A Knock at the Door", "tale_of_two_cities_37_dickens.mp3"], ["Bk3 Ch08 - A Hand at Cards", "tale_of_two_cities_38_dickens.mp3"], ["Bk3 Ch09 - The Game Made", "tale_of_two_cities_39_dickens.mp3"], ["Bk3 Ch10 - The Substance of the Shadow", "tale_of_two_cities_40_dickens.mp3"], ["Bk3 Ch11 - Dusk", "tale_of_two_cities_41_dickens.mp3"], ["Bk3 Ch12 - Darkness", "tale_of_two_cities_42_dickens.mp3"], ["Bk3 Ch13 - Fifty-two", "tale_of_two_cities_43_dickens.mp3"], ["Bk3 Ch14 - The Knitting Done", "tale_of_two_cities_44_dickens.mp3"], ["Bk3 Ch15 - The Footsteps Die Out For Ever", "tale_of_two_cities_45_dickens.mp3"]]}, "11": {"base": "https://archive.org/download/picture_dorian_gray_1204_librivox/", "chapters": [["00 - The Preface", "pictureofdoriangray_00_wilde.mp3"], ["01 - Chapter 1", "pictureofdoriangray_01_wilde.mp3"], ["02 - Chapter 2", "pictureofdoriangray_02_wilde.mp3"], ["03 - Chapter 3", "pictureofdoriangray_03_wilde.mp3"], ["04 - Chapter 4", "pictureofdoriangray_04_wilde.mp3"], ["05 - Chapter 5", "pictureofdoriangray_05_wilde.mp3"], ["06 - Chapter 6", "pictureofdoriangray_06_wilde.mp3"], ["07 - Chapter 7", "pictureofdoriangray_07_wilde.mp3"], ["08 - Chapter 08", "pictureofdoriangray_08_wilde.mp3"], ["09 - Chapter 9", "pictureofdoriangray_09_wilde.mp3"], ["10 - Chapter 10", "pictureofdoriangray_10_wilde.mp3"], ["11 - Chapter 11", "pictureofdoriangray_11_wilde.mp3"], ["12 - Chapter 12", "pictureofdoriangray_12_wilde.mp3"], ["13 - Chapter 13", "pictureofdoriangray_13_wilde.mp3"], ["14 - Chapter 14", "pictureofdoriangray_14_wilde.mp3"], ["15 - Chapter 15", "pictureofdoriangray_15_wilde.mp3"], ["16 - Chapter 16", "pictureofdoriangray_16_wilde.mp3"], ["17 - Chapter 17", "pictureofdoriangray_17_wilde.mp3"], ["18 - Chapter 18", "pictureofdoriangray_18_wilde.mp3"], ["19 - Chapter 19", "pictureofdoriangray_19_wilde.mp3"], ["20 - Chapter 20", "pictureofdoriangray_20_wilde.mp3"]]}, "12": {"base": "https://archive.org/download/prophet1_1901_librivox/", "chapters": [["01 - Ch 1-2", "prophet1_01_gibran.mp3"], ["02 - Ch 3-7", "prophet1_02_gibran.mp3"], ["03 - Ch 8-12", "prophet1_03_gibran.mp3"], ["04 - Ch 13-18", "prophet1_04_gibran.mp3"], ["05 - Ch 19-23", "prophet1_05_gibran.mp3"], ["06 - Ch 24-27", "prophet1_06_gibran.mp3"], ["07 - Ch 28", "prophet1_07_gibran.mp3"]]}};
 
   const selectedBook = sampleBooks.find((b) => b.id === selectedBookId) || sampleBooks[0];
   const bookText = BOOK_TEXT[selectedBook.title] || { chapter: 'Preview', paragraphs: [selectedBook.description] };
-  const audioSrc = AUDIO_URLS[selectedBook.id];
+  const book = AUDIOBOOKS[selectedBook.id] || { base: '', chapters: [] };
+  const chapters = book.chapters;
+  const currentChapter = chapters[chapterIdx] || chapters[0];
+  const audioSrc = currentChapter ? book.base + encodeURIComponent(currentChapter[1]) : '';
+
+  const loadProgress = (id) => {
+    try { return JSON.parse(localStorage.getItem('booksem_progress_' + id) || 'null'); } catch { return null; }
+  };
+
+  // When book changes, restore the saved chapter + time
+  useEffect(() => {
+    const p = loadProgress(selectedBookId);
+    setChapterIdx(p && p.chapter < (AUDIOBOOKS[selectedBookId]?.chapters.length || 0) ? p.chapter : 0);
+    resumeTimeRef.current = p ? p.time || 0 : 0;
+    localStorage.setItem('booksem_player', JSON.stringify({ bookId: selectedBookId }));
+  }, [selectedBookId]);
+
+  // Save progress every few seconds
+  useEffect(() => {
+    if (!currentTime) return;
+    if (Math.floor(currentTime) % 5 !== 0) return;
+    localStorage.setItem('booksem_progress_' + selectedBookId, JSON.stringify({ chapter: chapterIdx, time: currentTime }));
+  }, [Math.floor(currentTime)]);
+
+  // Sleep timer countdown
+  useEffect(() => {
+    if (!sleepEndsAt) return;
+    const t = setInterval(() => {
+      if (Date.now() >= sleepEndsAt) {
+        audioRef.current && audioRef.current.pause();
+        setIsPlayingAudio(false);
+        setSleepMode(null);
+        setSleepEndsAt(null);
+      }
+    }, 1000);
+    return () => clearInterval(t);
+  }, [sleepEndsAt]);
+
+  const cycleSleep = () => {
+    const order = [null, 15, 30, 45, 60, 'chapter'];
+    const next = order[(order.indexOf(sleepMode) + 1) % order.length];
+    setSleepMode(next);
+    setSleepEndsAt(typeof next === 'number' ? Date.now() + next * 60000 : null);
+  };
+
+  const sleepLabel = sleepMode === null ? 'Sleep: Off' : sleepMode === 'chapter' ? 'Sleep: End of chapter'
+    : `Sleep: ${Math.max(0, Math.ceil(((sleepEndsAt || 0) - Date.now()) / 60000))} min`;
 
   const stopAll = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
+    if (audioRef.current) audioRef.current.pause();
     setIsPlayingAudio(false);
-    setCurrentTime(0);
   };
+
+  const goToChapter = (idx, autoplay = true) => {
+    if (idx < 0 || idx >= chapters.length) return;
+    resumeTimeRef.current = 0;
+    autoPlayRef.current = autoplay;
+    setCurrentTime(0);
+    setDuration(0);
+    setChapterIdx(idx);
+    localStorage.setItem('booksem_progress_' + selectedBookId, JSON.stringify({ chapter: idx, time: 0 }));
+  };
+
+  const skip = (secs) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = Math.max(0, Math.min(audioRef.current.duration || 0, audioRef.current.currentTime + secs));
+  };
+
+  const handleLoaded = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    setDuration(a.duration);
+    a.playbackRate = playbackRate;
+    if (resumeTimeRef.current > 0) { a.currentTime = resumeTimeRef.current; resumeTimeRef.current = 0; }
+    if (autoPlayRef.current) {
+      autoPlayRef.current = false;
+      a.play().then(() => setIsPlayingAudio(true)).catch(() => setIsPlayingAudio(false));
+    }
+  };
+
+  const handleEnded = () => {
+    if (sleepMode === 'chapter') { setIsPlayingAudio(false); setSleepMode(null); return; }
+    if (chapterIdx + 1 < chapters.length) goToChapter(chapterIdx + 1, true);
+    else { setIsPlayingAudio(false); localStorage.removeItem('booksem_progress_' + selectedBookId); }
+  };
+
+  // Lock-screen / headphone controls
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !currentChapter) return;
+    navigator.mediaSession.metadata = new window.MediaMetadata({
+      title: currentChapter[0], artist: selectedBook.author, album: selectedBook.title,
+      artwork: [{ src: selectedBook.cover, sizes: '400x400', type: 'image/jpeg' }]
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', () => goToChapter(chapterIdx - 1));
+    navigator.mediaSession.setActionHandler('nexttrack', () => goToChapter(chapterIdx + 1));
+    navigator.mediaSession.setActionHandler('seekbackward', () => skip(-15));
+    navigator.mediaSession.setActionHandler('seekforward', () => skip(15));
+  }, [chapterIdx, selectedBookId]);
 
   const openBook = (id) => {
     stopAll();
@@ -377,7 +459,7 @@ export default function BooksemApp() {
               Listen & Read
             </button>
             <button
-              onClick={() => { stopAll(); setActiveTab('studio'); }}
+              onClick={() => setActiveTab('studio')}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
                 activeTab === 'studio' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
               }`}
@@ -386,58 +468,60 @@ export default function BooksemApp() {
               Author Studio
             </button>
             <button
-              onClick={() => { stopAll(); setActiveTab('interview'); }}
+              onClick={() => setActiveTab('interview')}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
                 activeTab === 'interview' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Users className="w-4 h-4 inline mr-2" />
-              Live Interview Room
+              <Mic className="w-4 h-4 inline mr-2" />
+              Interview Room
             </button>
           </nav>
 
           <div className="flex items-center space-x-3">
             <button 
               onClick={() => setShowUploadModal(true)}
-              className="flex items-center space-x-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-sm transition shadow-lg shadow-amber-500/10"
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold px-4 py-2 rounded-lg flex items-center border border-slate-700 transition"
             >
-              <Upload className="w-4 h-4" />
-              <span className="hidden sm:inline">Upload Work</span>
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Work
+            </button>
+            <button className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm px-4 py-2 rounded-lg transition shadow-md shadow-amber-500/20">
+              Cart ({cartCount})
             </button>
           </div>
         </div>
       </header>
 
       {/* 2. BODY CONTENT */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
-        {/* TAB 1: MARKETPLACE */}
+      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
+        {/* TAB 1: STORE & EXPLORE */}
         {activeTab === 'marketplace' && (
-          <div className="space-y-10">
-            {/* Hero Banner */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-600/20 via-amber-500/10 to-slate-900 border border-amber-500/20 p-8 md:p-12">
-              <div className="max-w-2xl space-y-4">
-                <span className="inline-flex items-center text-xs font-semibold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-                  Global Public Domain & Creator Marketplace
+          <div className="space-y-8">
+            <div className="bg-gradient-to-r from-amber-500/15 via-slate-900 to-slate-900 border border-amber-500/30 rounded-2xl p-8 relative overflow-hidden">
+              <div className="max-w-2xl relative z-10">
+                <span className="text-amber-400 font-bold tracking-wider text-xs uppercase bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
+                  Global Bookstore & Audio Reader
                 </span>
-                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
-                  Timeless Masterpieces & Modern Creator Audiobooks.
+                <h1 className="text-4xl font-extrabold text-white mt-4 mb-3 tracking-tight">
+                  Read & Listen to the Greatest Books Ever Written.
                 </h1>
-                <p className="text-slate-300 text-base md:text-lg">
-                  Read and listen to classic literature with human narrations, or self-publish your own manuscripts to readers worldwide.
+                <p className="text-slate-400 text-base leading-relaxed mb-6">
+                  Access free public domain classics and audiobooks instantly, or publish your own work to readers worldwide.
                 </p>
-                <div className="flex flex-wrap gap-3 pt-2">
+                <div className="flex items-center space-x-4">
                   <button 
                     onClick={() => openBook('1')}
-                    className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-3 rounded-xl transition flex items-center space-x-2 shadow-lg shadow-amber-500/20 text-sm"
+                    className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-3 rounded-xl transition flex items-center shadow-lg shadow-amber-500/20"
                   >
-                    <Headphones className="w-4 h-4" />
-                    <span>Listen to The Art of War</span>
+                    <Headphones className="w-5 h-5 mr-2" />
+                    Listen to The Art of War Free
                   </button>
                   <button 
-                    onClick={() => setActiveTab('studio')}
-                    className="bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold px-6 py-3 rounded-xl transition text-sm"
+                    onClick={() => setShowUploadModal(true)}
+                    className="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-6 py-3 rounded-xl border border-slate-700 transition"
                   >
-                    Self-Publish a Book
+                    Sell Your Book
                   </button>
                 </div>
               </div>
@@ -447,34 +531,29 @@ export default function BooksemApp() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-xl font-bold text-white">Featured Books & Audiobooks</h2>
-                  <p className="text-xs text-slate-400">Click any title to preview or listen to the full narration</p>
+                  <h2 className="text-2xl font-bold text-white">Featured Books & Audiobooks</h2>
+                  <p className="text-sm text-slate-400">12 Public Domain Classics & Global Bestsellers</p>
                 </div>
-                <span className="text-xs text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-                  {sampleBooks.length} Books Available
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">
+                    Showing 12 titles
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {sampleBooks.map((book) => (
-                  <div 
-                    key={book.id} 
-                    className="bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden hover:border-amber-500/40 hover:shadow-xl hover:shadow-amber-500/5 transition flex flex-col group"
-                  >
-                    <div 
-                      className="relative aspect-[3/4] overflow-hidden bg-slate-800 cursor-pointer"
-                      onClick={() => openBook(book.id)}
-                    >
+                  <div key={book.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col hover:border-amber-500/40 transition group">
+                    <div className="relative aspect-[3/4] bg-slate-950 overflow-hidden">
                       <img 
                         src={book.cover} 
-                        alt={book.title} 
+                        alt={book.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                        loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition" />
-                      <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-semibold text-slate-200 border border-slate-800 flex items-center space-x-1">
-                        <Headphones className="w-3 h-3 text-amber-400" />
-                        <span>Audiobook</span>
+                      <div className="absolute top-3 left-3">
+                        <span className="bg-slate-950/80 backdrop-blur text-amber-400 text-xs font-semibold px-2 py-1 rounded">
+                          {book.format}
+                        </span>
                       </div>
                     </div>
 
@@ -553,7 +632,7 @@ export default function BooksemApp() {
           </div>
         )}
 
-        {/* TAB 3: INTEGRATED READER & REAL HUMAN AUDIOBOOK PLAYER */}
+        {/* TAB 3: INTEGRATED READER & REAL AUDIOBOOK PLAYER */}
         {activeTab === 'reader' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -581,18 +660,21 @@ export default function BooksemApp() {
 
             {/* REAL Working Audio Player Bar */}
             <div className="bg-gradient-to-r from-slate-900 to-amber-950/40 border border-amber-900/30 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
-              {/* HTML5 Audio Element */}
+              {/* Invisible HTML5 Audio Element */}
               <audio
                 ref={audioRef}
-                key={selectedBook.id}
-                src={audioSrc}
+                src={audioSrc || undefined}
                 onTimeUpdate={() => audioRef.current && setCurrentTime(audioRef.current.currentTime)}
-                onLoadedMetadata={() => audioRef.current && setDuration(audioRef.current.duration)}
-                onEnded={() => setIsPlayingAudio(false)}
+                onLoadedMetadata={handleLoaded}
+                onEnded={handleEnded}
+                onPause={() => setIsPlayingAudio(false)}
+                onPlay={() => setIsPlayingAudio(true)}
                 preload="metadata"
               />
 
-              <div className="flex items-center space-x-3 w-full md:w-auto">
+              <div className="flex items-center space-x-2 w-full md:w-auto">
+                <button onClick={() => goToChapter(chapterIdx - 1)} disabled={chapterIdx === 0} className="p-2 text-slate-300 hover:text-amber-400 disabled:opacity-30" title="Previous chapter"><SkipBack className="w-5 h-5" /></button>
+                <button onClick={() => skip(-15)} className="p-2 text-slate-300 hover:text-amber-400" title="Back 15 seconds"><RotateCcw className="w-5 h-5" /></button>
                 <button 
                   onClick={togglePlay}
                   className="w-12 h-12 rounded-full bg-amber-500 hover:bg-amber-400 flex items-center justify-center text-slate-950 font-bold transition shadow-lg shadow-amber-500/20 flex-shrink-0"
@@ -600,9 +682,11 @@ export default function BooksemApp() {
                 >
                   {isPlayingAudio ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
                 </button>
-                <div>
-                  <span className="text-xs text-amber-400 font-bold block uppercase tracking-wider">Audiobook Track</span>
-                  <p className="text-sm font-semibold text-white">{bookText.chapter}</p>
+                <button onClick={() => skip(15)} className="p-2 text-slate-300 hover:text-amber-400" title="Forward 15 seconds"><RotateCw className="w-5 h-5" /></button>
+                <button onClick={() => goToChapter(chapterIdx + 1)} disabled={chapterIdx >= chapters.length - 1} className="p-2 text-slate-300 hover:text-amber-400 disabled:opacity-30" title="Next chapter"><SkipForward className="w-5 h-5" /></button>
+                <div className="ml-2 min-w-0">
+                  <span className="text-xs text-amber-400 font-bold block uppercase tracking-wider">Full Audiobook · Track {chapterIdx + 1} of {chapters.length}</span>
+                  <p className="text-sm font-semibold text-white truncate max-w-[220px]">{currentChapter ? currentChapter[0] : ''}</p>
                 </div>
               </div>
 
@@ -635,8 +719,30 @@ export default function BooksemApp() {
                   <Volume2 className="w-3.5 h-3.5 text-amber-400" />
                   <span>{playbackRate}x Speed</span>
                 </button>
+                <button onClick={cycleSleep} className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${sleepMode ? 'bg-amber-500/15 border-amber-500/40 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`} title="Sleep timer">
+                  <Moon className="w-3.5 h-3.5" /><span>{sleepLabel}</span>
+                </button>
+                <button onClick={() => setShowChapters(!showChapters)} className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700" title="Chapters">
+                  <List className="w-3.5 h-3.5 text-amber-400" /><span>Chapters</span>
+                </button>
               </div>
             </div>
+
+            {/* Chapter list - the complete book */}
+            {showChapters && (
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 max-w-3xl mx-auto">
+                <h3 className="text-sm font-bold text-white mb-3">Complete Audiobook — {chapters.length} tracks · narrated by real human volunteers (LibriVox / Archive.org)</h3>
+                <div className="max-h-72 overflow-y-auto divide-y divide-slate-800">
+                  {chapters.map((c, i) => (
+                    <button key={c[1]} onClick={() => goToChapter(i)} className={`w-full text-left px-3 py-2 text-sm flex items-center gap-3 transition ${i === chapterIdx ? 'bg-amber-500/10 text-amber-300' : 'text-slate-300 hover:bg-slate-800'}`}>
+                      <span className="font-mono text-xs w-8 text-slate-500">{i + 1}</span>
+                      {i === chapterIdx && isPlayingAudio ? <Volume2 className="w-4 h-4 text-amber-400" /> : <Play className="w-3.5 h-3.5 text-slate-500" />}
+                      <span className="truncate">{c[0]}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Book Reading Canvas */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 max-w-3xl mx-auto shadow-xl">
