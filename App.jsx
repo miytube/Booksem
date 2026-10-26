@@ -49,6 +49,17 @@ export default function BooksemApp() {
     return isBookUnlocked(bookId);
   };
 
+  // Stripe return: unlock All-Access after checkout redirects back
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success' && params.get('type') === 'subscription') {
+      setHasMonthlyPass(true);
+      localStorage.setItem('booksem_has_pass', 'true');
+      window.history.replaceState({}, '', window.location.pathname);
+      alert('Thank you! Your Booksem All-Access Pass is active. Enjoy every audiobook.');
+    }
+  }, []);
+
   const unlockBook = (bookId) => {
     const updated = unlockedBooks.includes(bookId) ? unlockedBooks : [...unlockedBooks, bookId];
     setUnlockedBooks(updated);
@@ -277,7 +288,7 @@ export default function BooksemApp() {
     })(),
     // 5. The Prince (Niccolo Machiavelli) - Verified LibriVox
     5: (() => {
-      const base = 'https://archive.org/download/prince_machiavelli_librivox/';
+      const base = 'https://archive.org/download/prince_librivox/';
       return [
         ['Dedication & Chapters 1-5: Types of Principalities', base + 'prince_01_machiavelli_64kb.mp3'],
         ['Chapters 6-9: New Principalities & Civic Rule', base + 'prince_02_machiavelli_64kb.mp3'],
@@ -1208,17 +1219,10 @@ export default function BooksemApp() {
                   <p className="text-xs text-slate-400 mt-1">One-time payment. Permanent lifetime access to all chapters & audio.</p>
                 </div>
                 <button 
-                  onClick={() => {
-                    unlockBook(paywallTargetBook.id);
-                    setShowPaywallModal(false);
-                    if (selectedBookId === paywallTargetBook.id) {
-                      setIsPlayingAudio(true);
-                      if (audioRef.current) audioRef.current.play().catch(() => {});
-                    }
-                  }}
-                  className="mt-5 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 rounded-lg transition shadow-md shadow-amber-500/20"
+                  disabled
+                  className="mt-5 w-full bg-slate-800 text-slate-400 font-bold text-xs py-2.5 rounded-lg cursor-not-allowed"
                 >
-                  Buy for ${paywallTargetBook.price}
+                  Single-book purchase coming soon
                 </button>
               </div>
 
@@ -1239,17 +1243,12 @@ export default function BooksemApp() {
                 </div>
                 <button 
                   onClick={() => {
-                    setHasMonthlyPass(true);
-                    localStorage.setItem('booksem_has_pass', 'true');
-                    setShowPaywallModal(false);
-                    if (selectedBookId === paywallTargetBook.id) {
-                      setIsPlayingAudio(true);
-                      if (audioRef.current) audioRef.current.play().catch(() => {});
-                    }
+                    if (audioRef.current) audioRef.current.pause();
+                    window.location.href = STRIPE_ALL_ACCESS_URL;
                   }}
                   className="mt-5 w-full bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs py-2.5 rounded-lg transition"
                 >
-                  Start Monthly Pass
+                  Pay with Stripe ($9.99/mo)
                 </button>
               </div>
             </div>
