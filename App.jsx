@@ -18,7 +18,6 @@ export default function BooksemApp() {
 
   const audioRef = useRef(null);
   const [selectedBookId, setSelectedBookId] = useState('1');
-  const ttsTimer = useRef(null);
 
   const sampleBooks = [
     {
@@ -167,7 +166,6 @@ export default function BooksemApp() {
     }
   ];
 
-
   const BOOK_TEXT = {
     "The Art of War": {
       "chapter": "Chapter 1: Laying Plans",
@@ -228,7 +226,7 @@ export default function BooksemApp() {
       "chapter": "Chapter 1: Jonathan Harker's Journal",
       "paragraphs": [
         "Left Munich at 8:35 P.M., on 1st May, arriving at Vienna early next morning; should have arrived at 6:46, but train was an hour late.",
-        "Buda-Pesth seems a wonderful place, from the glimpse which I got of it from the train and the little I could walk through the streets. I feared to go very far from the station, as we had arrived late and would start as near the correct time as possible."
+        "Buda-Pesth seems a wonderful place, from the glimpse which I got of it from the train and the little I could walk through the streets. I feared to go very far from the station, as we arrived late and would start as near the correct time as possible."
       ]
     },
     "The Great Gatsby": {
@@ -260,19 +258,33 @@ export default function BooksemApp() {
       ]
     }
   };
+
+  const AUDIO_URLS = {
+    '1': 'https://archive.org/download/art_of_war_librivox/art_of_war_01-02_sun_tzu.mp3',
+    '2': 'https://archive.org/download/audiobook-thinkandgrowrich/ch01.mp3',
+    '3': 'https://archive.org/download/meditations_0708_librivox/meditations_01_marcusaurelius.mp3',
+    '4': 'https://archive.org/download/pride_prejudice_1102_librivox/prideandprejudice_01_austen.mp3',
+    '5': 'https://archive.org/download/prince_pa_librivox/prince_01_machiavelli.mp3',
+    '6': 'https://archive.org/download/frankenstein_cs_librivox/frankenstein_01_shelley.mp3',
+    '7': 'https://archive.org/download/TheScienceofGettingRich/01_Preface.mp3',
+    '8': 'https://archive.org/download/dracula_librivox/dracula_01_stoker.mp3',
+    '9': 'https://archive.org/download/thegreatgatsbyversion4_2402_librivox/greatgatsby4_00_fitzgerald_128kb.mp3',
+    '10': 'https://archive.org/download/tale_two_cities_librivox/tale_of_two_cities_01_dickens.mp3',
+    '11': 'https://archive.org/download/picture_dorian_gray_1204_librivox/pictureofdoriangray_01_wilde.mp3',
+    '12': 'https://archive.org/download/prophet1_1901_librivox/prophet1_01_gibran.mp3'
+  };
+
   const selectedBook = sampleBooks.find((b) => b.id === selectedBookId) || sampleBooks[0];
   const bookText = BOOK_TEXT[selectedBook.title] || { chapter: 'Preview', paragraphs: [selectedBook.description] };
-  const audioSrc = selectedBook.title === 'The Art of War'
-    ? 'https://archive.org/download/art_of_war_librivox/art_of_war_01-02_sun_tzu_64kb.mp3'
-    : null;
+  const audioSrc = AUDIO_URLS[selectedBook.id];
 
   const stopAll = () => {
-    if (audioRef.current) { audioRef.current.pause(); }
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-    if (ttsTimer.current) { clearInterval(ttsTimer.current); ttsTimer.current = null; }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
     setIsPlayingAudio(false);
     setCurrentTime(0);
-    setDuration(0);
   };
 
   const openBook = (id) => {
@@ -280,22 +292,6 @@ export default function BooksemApp() {
     setSelectedBookId(id);
     setActiveTab('reader');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const speakBook = () => {
-    if (!window.speechSynthesis) { alert('Your browser does not support read-aloud.'); return; }
-    const text = selectedBook.title + ', by ' + selectedBook.author + '. ' + bookText.chapter + '. ' + bookText.paragraphs.join(' ');
-    const words = text.split(/\s+/).length;
-    const est = (words / 2.6) / playbackRate;
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = playbackRate;
-    u.onend = () => { if (ttsTimer.current) clearInterval(ttsTimer.current); ttsTimer.current = null; setIsPlayingAudio(false); setCurrentTime(est); };
-    window.speechSynthesis.cancel();
-    setDuration(est); setCurrentTime(0);
-    window.speechSynthesis.speak(u);
-    setIsPlayingAudio(true);
-    const start = Date.now();
-    ttsTimer.current = setInterval(() => setCurrentTime(Math.min(est, (Date.now() - start) / 1000)), 250);
   };
 
   // Format seconds to mm:ss
@@ -308,10 +304,6 @@ export default function BooksemApp() {
 
   // Toggle Audio Play / Pause
   const togglePlay = () => {
-    if (!audioSrc) {
-      if (isPlayingAudio) { stopAll(); } else { speakBook(); }
-      return;
-    }
     if (!audioRef.current) return;
     if (isPlayingAudio) {
       audioRef.current.pause();
@@ -328,10 +320,10 @@ export default function BooksemApp() {
 
   // Seek bar click
   const handleSeek = (e) => {
-    if (!audioSrc || !audioRef.current || !duration) return;
+    if (!audioRef.current || !duration) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
-    const newTime = (clickX / rect.width) * duration;
+    const newTime = Math.max(0, Math.min(duration, (clickX / rect.width) * duration));
     audioRef.current.currentTime = newTime;
     setCurrentTime(newTime);
   };
@@ -385,7 +377,7 @@ export default function BooksemApp() {
               Listen & Read
             </button>
             <button
-              onClick={() => setActiveTab('studio')}
+              onClick={() => { stopAll(); setActiveTab('studio'); }}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
                 activeTab === 'studio' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
               }`}
@@ -394,60 +386,58 @@ export default function BooksemApp() {
               Author Studio
             </button>
             <button
-              onClick={() => setActiveTab('interview')}
+              onClick={() => { stopAll(); setActiveTab('interview'); }}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
                 activeTab === 'interview' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Mic className="w-4 h-4 inline mr-2" />
-              Interview Room
+              <Users className="w-4 h-4 inline mr-2" />
+              Live Interview Room
             </button>
           </nav>
 
           <div className="flex items-center space-x-3">
             <button 
               onClick={() => setShowUploadModal(true)}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold px-4 py-2 rounded-lg flex items-center border border-slate-700 transition"
+              className="flex items-center space-x-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-xl text-sm transition shadow-lg shadow-amber-500/10"
             >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Work
-            </button>
-            <button className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm px-4 py-2 rounded-lg transition shadow-md shadow-amber-500/20">
-              Cart ({cartCount})
+              <Upload className="w-4 h-4" />
+              <span className="hidden sm:inline">Upload Work</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* 2. BODY CONTENT */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
-        {/* TAB 1: STORE & EXPLORE */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
+        {/* TAB 1: MARKETPLACE */}
         {activeTab === 'marketplace' && (
-          <div className="space-y-8">
-            <div className="bg-gradient-to-r from-amber-500/15 via-slate-900 to-slate-900 border border-amber-500/30 rounded-2xl p-8 relative overflow-hidden">
-              <div className="max-w-2xl relative z-10">
-                <span className="text-amber-400 font-bold tracking-wider text-xs uppercase bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-                  Global Bookstore & Audio Reader
+          <div className="space-y-10">
+            {/* Hero Banner */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-600/20 via-amber-500/10 to-slate-900 border border-amber-500/20 p-8 md:p-12">
+              <div className="max-w-2xl space-y-4">
+                <span className="inline-flex items-center text-xs font-semibold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
+                  Global Public Domain & Creator Marketplace
                 </span>
-                <h1 className="text-4xl font-extrabold text-white mt-4 mb-3 tracking-tight">
-                  Read & Listen to the Greatest Books Ever Written.
+                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
+                  Timeless Masterpieces & Modern Creator Audiobooks.
                 </h1>
-                <p className="text-slate-400 text-base leading-relaxed mb-6">
-                  Access free public domain classics and audiobooks instantly, or publish your own work to readers worldwide.
+                <p className="text-slate-300 text-base md:text-lg">
+                  Read and listen to classic literature with human narrations, or self-publish your own manuscripts to readers worldwide.
                 </p>
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-wrap gap-3 pt-2">
                   <button 
                     onClick={() => openBook('1')}
-                    className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-3 rounded-xl transition flex items-center shadow-lg shadow-amber-500/20"
+                    className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-3 rounded-xl transition flex items-center space-x-2 shadow-lg shadow-amber-500/20 text-sm"
                   >
-                    <Headphones className="w-5 h-5 mr-2" />
-                    Listen to The Art of War Free
+                    <Headphones className="w-4 h-4" />
+                    <span>Listen to The Art of War</span>
                   </button>
                   <button 
-                    onClick={() => setShowUploadModal(true)}
-                    className="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-6 py-3 rounded-xl border border-slate-700 transition"
+                    onClick={() => setActiveTab('studio')}
+                    className="bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold px-6 py-3 rounded-xl transition text-sm"
                   >
-                    Sell Your Book
+                    Self-Publish a Book
                   </button>
                 </div>
               </div>
@@ -457,29 +447,34 @@ export default function BooksemApp() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-white">Featured Books & Audiobooks</h2>
-                  <p className="text-sm text-slate-400">12 Public Domain Classics & Global Bestsellers</p>
+                  <h2 className="text-xl font-bold text-white">Featured Books & Audiobooks</h2>
+                  <p className="text-xs text-slate-400">Click any title to preview or listen to the full narration</p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">
-                    Showing 12 titles
-                  </span>
-                </div>
+                <span className="text-xs text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+                  {sampleBooks.length} Books Available
+                </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {sampleBooks.map((book) => (
-                  <div key={book.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col hover:border-amber-500/40 transition group">
-                    <div className="relative aspect-[3/4] bg-slate-950 overflow-hidden">
+                  <div 
+                    key={book.id} 
+                    className="bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden hover:border-amber-500/40 hover:shadow-xl hover:shadow-amber-500/5 transition flex flex-col group"
+                  >
+                    <div 
+                      className="relative aspect-[3/4] overflow-hidden bg-slate-800 cursor-pointer"
+                      onClick={() => openBook(book.id)}
+                    >
                       <img 
                         src={book.cover} 
-                        alt={book.title}
+                        alt={book.title} 
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        loading="lazy"
                       />
-                      <div className="absolute top-3 left-3">
-                        <span className="bg-slate-950/80 backdrop-blur text-amber-400 text-xs font-semibold px-2 py-1 rounded">
-                          {book.format}
-                        </span>
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition" />
+                      <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-semibold text-slate-200 border border-slate-800 flex items-center space-x-1">
+                        <Headphones className="w-3 h-3 text-amber-400" />
+                        <span>Audiobook</span>
                       </div>
                     </div>
 
@@ -558,13 +553,13 @@ export default function BooksemApp() {
           </div>
         )}
 
-        {/* TAB 3: INTEGRATED READER & REAL AUDIOBOOK PLAYER */}
+        {/* TAB 3: INTEGRATED READER & REAL HUMAN AUDIOBOOK PLAYER */}
         {activeTab === 'reader' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-white">{selectedBook.title}</h1>
-                <p className="text-slate-400 text-sm">Author: {selectedBook.author} | Narrated by: {audioSrc ? 'Audio Classics (LibriVox Public Domain)' : 'Read-aloud voice'}</p>
+                <p className="text-slate-400 text-sm">Author: {selectedBook.author} | Narrated by: Real Human Voice (Public Domain LibriVox / Internet Archive)</p>
               </div>
               <div className="flex space-x-2">
                 <button 
@@ -586,11 +581,11 @@ export default function BooksemApp() {
 
             {/* REAL Working Audio Player Bar */}
             <div className="bg-gradient-to-r from-slate-900 to-amber-950/40 border border-amber-900/30 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
-              {/* Invisible HTML5 Audio Element */}
+              {/* HTML5 Audio Element */}
               <audio
                 ref={audioRef}
                 key={selectedBook.id}
-                src={audioSrc || undefined}
+                src={audioSrc}
                 onTimeUpdate={() => audioRef.current && setCurrentTime(audioRef.current.currentTime)}
                 onLoadedMetadata={() => audioRef.current && setDuration(audioRef.current.duration)}
                 onEnded={() => setIsPlayingAudio(false)}
@@ -607,7 +602,7 @@ export default function BooksemApp() {
                 </button>
                 <div>
                   <span className="text-xs text-amber-400 font-bold block uppercase tracking-wider">Audiobook Track</span>
-                  <p className="text-sm font-semibold text-white">Chapter 1: Laying Plans</p>
+                  <p className="text-sm font-semibold text-white">{bookText.chapter}</p>
                 </div>
               </div>
 
@@ -627,7 +622,7 @@ export default function BooksemApp() {
                   />
                 </div>
                 <span className="text-xs text-slate-400 font-mono w-10">
-                  {duration > 0 ? formatTime(duration) : '18:20'}
+                  {duration > 0 ? formatTime(duration) : '--:--'}
                 </span>
               </div>
 
