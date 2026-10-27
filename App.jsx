@@ -9,7 +9,18 @@ import {
 
 const STRIPE_ALL_ACCESS_URL = 'https://buy.stripe.com/cNi5kwgEae2K0M88Qw6kg00';
 const STRIPE_SINGLE_BOOK_URLS = {
-  '1': 'https://buy.stripe.com/8x27sE73A4sa0M8giY6kg01', // The Art of War ($3.99)
+  '1': 'https://buy.stripe.com/8x27sE73A4sa0M8giY6kg01',
+  '2': 'https://buy.stripe.com/5kQ14ggEaaQy1QcaYE6kg02',
+  '3': 'https://buy.stripe.com/9B6bIUfA61fYeCYeaQ6kg03',
+  '4': 'https://buy.stripe.com/aFaeV60Fc7Em3Yk8Qw6kg04',
+  '5': 'https://buy.stripe.com/eVq00c87E9MufH21o46kg05',
+  '6': 'https://buy.stripe.com/9B6dR20Fc0bUdyU3wc6kg06',
+  '7': 'https://buy.stripe.com/aFa6oA5Zw6AifH2giY6kg07',
+  '8': 'https://buy.stripe.com/5kQ4gs5ZwaQy9iE2s86kg08',
+  '9': 'https://buy.stripe.com/3cI8wIfA69MugL6giY6kg09',
+  '10': 'https://buy.stripe.com/14A9AMew22k20M80k06kg0a',
+  '11': 'https://buy.stripe.com/5kQ5kwew22k2dyU5Ek6kg0b',
+  '12': 'https://buy.stripe.com/3cI9AM4Vs3o6cuQd6M6kg0c',
 };
 export default function BooksemApp() {
   const [activeTab, setActiveTab] = useState('marketplace');
@@ -117,15 +128,15 @@ export default function BooksemApp() {
     },
     {
       id: '4',
-      title: 'Pride and Prejudice',
-      author: 'Jane Austen',
-      genre: 'Classics',
+      title: 'The Republic',
+      author: 'Plato',
+      genre: 'Philosophy',
       format: 'Audiobook & E-Book',
-      price: 2.99,
-      rating: 4.8,
-      reviewsCount: 5210,
+      price: 3.99,
+      rating: 4.7,
+      reviewsCount: 3120,
       cover: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=400',
-      description: 'The witty romantic masterpiece charting the turbulent relationship between Elizabeth Bennet and Fitzwilliam Darcy.'
+      description: 'Plato\'s timeless dialogue on justice, the ideal city, and the philosopher-king, featuring the famous Allegory of the Cave.'
     },
     {
       id: '5',
@@ -278,24 +289,29 @@ export default function BooksemApp() {
       ];
     })(),
     '4': (() => {
-      const base = 'https://archive.org/download/pride_and_prejudice_librivox/';
+      const base = 'https://archive.org/download/republic_version_2_1310_librivox/';
       return [
-        ['Chapters 1-3: The Bennets & Mr. Bingley', base + 'prideandprejudice_01-03_austen_64kb.mp3'],
-        ['Chapters 4-6: Jane & Bingley, Elizabeth & Darcy', base + 'prideandprejudice_04-06_austen_64kb.mp3'],
-        ['Chapters 7-9: Netherfield Visit', base + 'prideandprejudice_07-09_austen_64kb.mp3'],
-        ['Chapters 10-12: Elizabeth at Netherfield', base + 'prideandprejudice_10-12_austen_64kb.mp3'],
-        ['Chapters 13-15: Mr. Collins Arrives', base + 'prideandprejudice_13-15_austen_64kb.mp3'],
-        ['Chapters 16-18: The Netherfield Ball', base + 'prideandprejudice_16-18_austen_64kb.mp3'],
-        ['Chapters 19-21: The Proposal of Mr. Collins', base + 'prideandprejudice_19-21_austen_64kb.mp3'],
-        ['Chapters 22-24: Charlotte Lucas Engaged', base + 'prideandprejudice_22-24_austen_64kb.mp3'],
-        ['Chapters 25-27: The Gardiners Arrive', base + 'prideandprejudice_25-27_austen_64kb.mp3'],
-        ['Chapters 28-30: Visit to Rosings', base + 'prideandprejudice_28-30_austen_64kb.mp3'],
-        ['Chapters 31-33: Darcy at Rosings', base + 'prideandprejudice_31-33_austen_64kb.mp3'],
-        ['Chapters 34-36: Darcy’s Proposal & Letter', base + 'prideandprejudice_34-36_austen_64kb.mp3'],
-        ['Chapters 43-45: Visit to Pemberley', base + 'prideandprejudice_43-45_austen_64kb.mp3'],
-        ['Chapters 46-48: Lydia’s Elopement', base + 'prideandprejudice_46-48_austen_64kb.mp3'],
-        ['Chapters 56-58: Lady Catherine & Darcy’s Return', base + 'prideandprejudice_56-58_austen_64kb.mp3'],
-        ['Chapters 59-61: Resolution & Weddings', base + 'prideandprejudice_59-61_austen_64kb.mp3']
+        ['Book 1 - Part 1', base + 'republic_01_plato_64kb.mp3'],
+        ['Book 1 - Part 2', base + 'republic_02_plato_64kb.mp3'],
+        ['Book 2 - Part 1', base + 'republic_03_plato_64kb.mp3'],
+        ['Book 2 - Part 2', base + 'republic_04_plato_64kb.mp3'],
+        ['Book 3 - Part 1', base + 'republic_05_plato_64kb.mp3'],
+        ['Book 3 - Part 2', base + 'republic_06_plato_64kb.mp3'],
+        ['Book 4 - Part 1', base + 'republic_07_plato_64kb.mp3'],
+        ['Book 4 - Part 2', base + 'republic_08_plato_64kb.mp3'],
+        ['Book 5 - Part 1', base + 'republic_09_plato_64kb.mp3'],
+        ['Book 5 - Part 2', base + 'republic_10_plato_64kb.mp3'],
+        ['Book 5 - Part 3', base + 'republic_11_plato_64kb.mp3'],
+        ['Book 6 - Part 1', base + 'republic_12_plato_64kb.mp3'],
+        ['Book 6 - Part 2', base + 'republic_13_plato_64kb.mp3'],
+        ['Book 7 - Part 1 (Allegory of the Cave)', base + 'republic_14_plato_64kb.mp3'],
+        ['Book 7 - Part 2', base + 'republic_15_plato_64kb.mp3'],
+        ['Book 8 - Part 1', base + 'republic_16_plato_64kb.mp3'],
+        ['Book 8 - Part 2', base + 'republic_17_plato_64kb.mp3'],
+        ['Book 9 - Part 1', base + 'republic_18_plato_64kb.mp3'],
+        ['Book 9 - Part 2', base + 'republic_19_plato_64kb.mp3'],
+        ['Book 10 - Part 1', base + 'republic_20_plato_64kb.mp3'],
+        ['Book 10 - Part 2', base + 'republic_21_plato_64kb.mp3']
       ];
     })(),
     // 5. The Prince (Niccolo Machiavelli) - Verified LibriVox
