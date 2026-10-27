@@ -22,8 +22,55 @@ const STRIPE_SINGLE_BOOK_URLS = {
   '11': 'https://buy.stripe.com/5kQ5kwew22k2dyU5Ek6kg0b',
   '12': 'https://buy.stripe.com/3cI9AM4Vs3o6cuQd6M6kg0c',
 };
+const READING_LOUNGES = [
+  { id: 'stoic', emoji: '🏛️', name: 'The Stoic & Strategy Study', mood: 'Polished oak, warm lantern light, calm focus.', ambience: 'fire', books: ['1','3','4','5'], gradient: 'from-amber-900/60 via-slate-900 to-slate-950' },
+  { id: 'wealth', emoji: '💼', name: 'The Wealth & Enterprise Lounge', mood: 'An executive library with a quiet coffeehouse hum.', ambience: 'cafe', books: ['2','6'], gradient: 'from-emerald-900/60 via-slate-900 to-slate-950' },
+  { id: 'gothic', emoji: '🕯️', name: 'The Gothic & Mystery Parlor', mood: 'Candlelit hearth and soft rain against the window.', ambience: 'rain', books: ['7','8','10'], gradient: 'from-purple-950/70 via-slate-900 to-slate-950' },
+  { id: 'classic', emoji: '☕', name: 'The Classic Literature Salon', mood: 'A sunlit courtyard for long afternoons with great stories.', ambience: 'cafe', books: ['9','11','12'], gradient: 'from-rose-900/50 via-slate-900 to-slate-950' },
+];
+
+function useAmbience() {
+  const ctxRef = useRef(null);
+  const nodesRef = useRef(null);
+  const [kind, setKind] = useState(null);
+  const stop = () => {
+    if (nodesRef.current) { try { nodesRef.current.forEach(n => n.stop ? n.stop() : n.disconnect()); } catch (_) {} nodesRef.current = null; }
+    setKind(null);
+  };
+  const start = (type) => {
+    stop();
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    const ctx = ctxRef.current || new AC(); ctxRef.current = ctx; ctx.resume();
+    const len = ctx.sampleRate * 2; const buf = ctx.createBuffer(1, len, ctx.sampleRate); const d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1;
+      if (type === 'fire') { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5 + (Math.random() < 0.0004 ? (Math.random() - 0.5) * 1.5 : 0); }
+      else if (type === 'cafe') { last = (last + 0.05 * w) / 1.05; d[i] = last * 2.5; }
+      else d[i] = w * 0.5; }
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const filter = ctx.createBiquadFilter();
+    filter.type = type === 'rain' ? 'highpass' : 'lowpass';
+    filter.frequency.value = type === 'rain' ? 900 : type === 'fire' ? 600 : 1200;
+    const gain = ctx.createGain(); gain.gain.value = type === 'rain' ? 0.12 : 0.25;
+    src.connect(filter).connect(gain).connect(ctx.destination); src.start();
+    nodesRef.current = [src, gain]; setKind(type);
+  };
+  useEffect(() => () => stop(), []);
+  return { kind, start, stop };
+}
+
 export default function BooksemApp() {
   const [activeTab, setActiveTab] = useState('marketplace');
+  const [activeLounge, setActiveLounge] = useState(null);
+  const ambience = useAmbience();
+  const [loungeNotes, setLoungeNotes] = useState(() => { try { return JSON.parse(localStorage.getItem('booksem_lounge_notes') || '{}'); } catch (_) { return {}; } });
+  const [noteDraft, setNoteDraft] = useState('');
+  const saveLoungeNote = () => {
+    if (!activeLounge || !noteDraft.trim()) return;
+    const list = [{ text: noteDraft.trim(), at: new Date().toLocaleDateString() }, ...(loungeNotes[activeLounge] || [])];
+    const updated = { ...loungeNotes, [activeLounge]: list };
+    setLoungeNotes(updated); localStorage.setItem('booksem_lounge_notes', JSON.stringify(updated)); setNoteDraft('');
+  };
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
@@ -713,6 +760,15 @@ export default function BooksemApp() {
             Storefront
           </button>
           <button
+            onClick={() => { setActiveTab('lounges'); setActiveLounge(null); }}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
+              activeTab === 'lounges' ? 'bg-amber-500/10 text-amber-400 font-semibold' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <span className="mr-2">🛋️</span>
+            Reading Lounges
+          </button>
+          <button
             onClick={() => setActiveTab('reader')}
             className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
               activeTab === 'reader' ? 'bg-amber-500/10 text-amber-400 font-semibold' : 'text-slate-400 hover:text-white'
@@ -1162,6 +1218,85 @@ export default function BooksemApp() {
             </div>
           </div>
         )}
+
+        {/* TAB: READING LOUNGES */}
+        {activeTab === 'lounges' && !activeLounge && (
+          <div className="space-y-6">
+            <div className="text-center max-w-2xl mx-auto">
+              <h2 className="text-3xl font-bold text-white mb-2">Booksem Reading Lounges</h2>
+              <p className="text-slate-400">Pick a room, take a seat, and settle in with a book on the subject you love.</p>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-6">
+              {READING_LOUNGES.map(room => (
+                <div key={room.id} className={`rounded-2xl border border-slate-800 bg-gradient-to-br ${room.gradient} p-6 flex flex-col`}>
+                  <div className="text-4xl mb-3">{room.emoji}</div>
+                  <h3 className="text-xl font-bold text-white">{room.name}</h3>
+                  <p className="text-slate-300 text-sm mt-1 mb-4">{room.mood}</p>
+                  <div className="flex -space-x-3 mb-5">
+                    {room.books.map(id => { const b = sampleBooks.find(x => x.id === id); return b ? <img key={id} src={b.cover} alt={b.title} className="w-12 h-16 object-cover rounded border-2 border-slate-900" /> : null; })}
+                  </div>
+                  <button onClick={() => { setActiveLounge(room.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="mt-auto px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-bold text-sm">Take a Seat →</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'lounges' && activeLounge && (() => {
+          const room = READING_LOUNGES.find(r => r.id === activeLounge);
+          const notes = loungeNotes[room.id] || [];
+          const labels = { fire: '🔥 Fireplace', rain: '🌧️ Rain', cafe: '☕ Café hum' };
+          return (
+            <div className="space-y-6">
+              <button onClick={() => { ambience.stop(); setActiveLounge(null); }} className="text-sm text-slate-400 hover:text-white">← All lounges</button>
+              <div className={`rounded-2xl border border-slate-800 bg-gradient-to-br ${room.gradient} p-8`}>
+                <div className="text-5xl mb-2">{room.emoji}</div>
+                <h2 className="text-3xl font-bold text-white">{room.name}</h2>
+                <p className="text-slate-300 mt-1">{room.mood}</p>
+                <div className="flex flex-wrap gap-2 mt-5">
+                  {Object.keys(labels).map(k => (
+                    <button key={k} onClick={() => ambience.kind === k ? ambience.stop() : ambience.start(k)} className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${ambience.kind === k ? 'bg-amber-500 text-slate-950 border-amber-500' : 'border-slate-600 text-slate-300 hover:text-white'}`}>
+                      {labels[k]} {ambience.kind === k ? '· On' : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <h3 className="text-lg font-bold text-white mb-3">The Room's Shelf</h3>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {room.books.map(id => { const b = sampleBooks.find(x => x.id === id); if (!b) return null; return (
+                      <div key={id} className="flex gap-3 bg-slate-900/80 border border-slate-800 rounded-xl p-3">
+                        <img src={b.cover} alt={b.title} className="w-16 h-24 object-cover rounded" />
+                        <div className="flex flex-col flex-1">
+                          <div className="font-semibold text-white text-sm">{b.title}</div>
+                          <div className="text-xs text-slate-400 mb-2">{b.author}</div>
+                          <button onClick={() => openBook(b.id, true)} className="mt-auto px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold flex items-center gap-1 w-fit">
+                            <Play className="w-3 h-3 fill-slate-950" /> Sit & Listen (Ch. 1 free)
+                          </button>
+                        </div>
+                      </div>
+                    ); })}
+                  </div>
+                </div>
+                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4">
+                  <h3 className="text-lg font-bold text-white mb-1">Reader Notes</h3>
+                  <p className="text-xs text-slate-500 mb-3">Save favorite quotes and thoughts from this room (kept on this device).</p>
+                  <textarea value={noteDraft} onChange={e => setNoteDraft(e.target.value)} rows={3} placeholder="A passage or thought worth keeping..." className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white" />
+                  <button onClick={saveLoungeNote} className="mt-2 w-full px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-semibold">Save Note</button>
+                  <div className="mt-4 space-y-2 max-h-80 overflow-y-auto">
+                    {notes.length === 0 && <p className="text-xs text-slate-500">No notes yet.</p>}
+                    {notes.map((n, i) => (
+                      <div key={i} className="bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-300">
+                        “{n.text}” <span className="block text-[10px] text-slate-500 mt-1">{n.at}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* TAB 4: LIVE AUTHOR ROOM */}
         {activeTab === 'interview' && (
