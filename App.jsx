@@ -3,9 +3,16 @@ import {
   BookOpen, Headphones, Mic, PenTool, ShoppingBag,
   Play, Pause, Star, Upload, Search, MessageSquare,
   Video, Users, Volume2, ShieldCheck, Heart, Share2,
-  CheckCircle, ArrowRight, SkipBack, SkipForward, RotateCcw, RotateCw, Moon, List,
+  CheckCircle, ArrowRight, User, LogOut, SkipBack, SkipForward, RotateCcw, RotateCw, Moon, List,
   Lock, Unlock, Sparkles, Check, X, Loader2
 } from 'lucide-react';
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// Account backend (Lovable Cloud). Saves purchases to the signed-in account so access follows the buyer across devices.
+const BOOKSEM_SUPABASE_URL = 'https://dfwbddmckfzfocpruvtj.supabase.co';
+const BOOKSEM_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmd2JkZG1ja2Z6Zm9jcHJ1dnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2MjI1MDgsImV4cCI6MjA4MDE5ODUwOH0.W3L54uNszEi8uLmYDKm77xLFmjEAC05TgJ3M-ghSlMo';
+const booksemAuth = createClient(BOOKSEM_SUPABASE_URL, BOOKSEM_SUPABASE_KEY);
 
 const STRIPE_ALL_ACCESS_URL = 'https://buy.stripe.com/cNi5kwgEae2K0M88Qw6kg00';
 const STRIPE_SINGLE_BOOK_URLS = {
@@ -103,10 +110,21 @@ export default function BooksemApp() {
   const [paywallTargetBook, setPaywallTargetBook] = useState(null);
   const [purchaseFormat, setPurchaseFormat] = useState('audio');
 
+  // Account / Auth State
+  const [user, setUser] = useState(null);
+  const [accountUnlockedBooks, setAccountUnlockedBooks] = useState([]);
+  const [accountHasPass, setAccountHasPass] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('signin');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
+
   const isBookUnlocked = (bookId) => {
     if (FREE_BOOK_IDS.includes(bookId)) return true;
-    if (hasMonthlyPass) return true;
-    return unlockedBooks.includes(bookId);
+    if (hasMonthlyPass || accountHasPass) return true;
+    return unlockedBooks.includes(bookId) || accountUnlockedBooks.includes(bookId);
   };
 
   const isChapterUnlocked = (bookId, trackIdx) => {
@@ -122,6 +140,7 @@ export default function BooksemApp() {
       localStorage.setItem('booksem_has_pass', 'true');
       window.history.replaceState({}, '', window.location.pathname);
       alert('Thank you! Your Booksem All-Access Pass is active. Enjoy every audiobook.');
+      if (!user) { setAuthMode('signup'); setAuthError(''); setShowAuthModal(true); }
     } else if (params.get('payment') === 'success' && params.get('book_id')) {
       const bid = params.get('book_id');
       setUnlockedBooks(prev => {
@@ -131,6 +150,7 @@ export default function BooksemApp() {
       });
       window.history.replaceState({}, '', window.location.pathname);
       alert('Thank you! Your purchase is complete. This audiobook is now unlocked.');
+      if (!user) { setAuthMode('signup'); setAuthError(''); setShowAuthModal(true); }
     }
   }, []);
 
@@ -138,6 +158,68 @@ export default function BooksemApp() {
     const updated = unlockedBooks.includes(bookId) ? unlockedBooks : [...unlockedBooks, bookId];
     setUnlockedBooks(updated);
     localStorage.setItem('booksem_unlocked_books', JSON.stringify(updated));
+  };
+
+  // Accounts: keep the signed-in account in sync with this device's unlocks
+  useEffect(() => {
+    const applyUser = async (u) => {
+      setUser(u);
+      if (!u) { setAccountUnlockedBooks([]); setAccountHasPass(false); return; }
+      const load = async () => {
+        const { data } = await booksemAuth.from('booksem_purchases').select('book_id').eq('user_id', u.id);
+        const rows = data || [];
+        setAccountUnlockedBooks(rows.map(r => r.book_id).filter(id => id !== 'all'));
+        setAccountHasPass(rows.some(r => r.book_id === 'all'));
+        // Push unlocks made on this device up to the account (idempotent)
+        const pending = unlockedBooks.filter(id => id !== 'all').map(id => ({ user_id: u.id, book_id: id, source: 'single' }));
+        if (localStorage.getItem('booksem_has_pass') === 'true') pending.push({ user_id: u.id, book_id: 'all', source: 'subscription' });
+        if (pending.length) {
+          await booksemAuth.from('booksem_purchases').upsert(pending, { onConflict: 'user_id,book_id', ignoreDuplicates: true });
+          const { data: fresh } = await booksemAuth.from('booksem_purchases').select('book_id').eq('user_id', u.id);
+          const freshRows = fresh || [];
+          setAccountUnlockedBooks(freshRows.map(r => r.book_id).filter(id => id !== 'all'));
+          setAccountHasPass(freshRows.some(r => r.book_id === 'all'));
+        }
+      };
+      load();
+    };
+    booksemAuth.auth.getSession().then(({ data }) => applyUser(data?.session?.user || null));
+    const { data: sub } = booksemAuth.auth.onAuthStateChange((_evt, session) => applyUser(session?.user || null));
+    return () => { try { sub.subscription.unsubscribe(); } catch (_) {} };
+  }, [unlockedBooks, hasMonthlyPass]);
+
+  const handleSignOut = async () => {
+    await booksemAuth.auth.signOut();
+    setUser(null);
+    setAccountUnlockedBooks([]);
+    setAccountHasPass(false);
+  };
+
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setAuthBusy(true); setAuthError('');
+    try {
+      if (authMode === 'signup') {
+        const { error } = await booksemAuth.auth.signUp({
+          email: authEmail.trim(),
+          password: authPassword,
+          options: { emailRedirectTo: window.location.origin }
+        });
+        if (error) throw error;
+        setShowAuthModal(false);
+        setAuthPassword('');
+        alert('Welcome to Booksem! Your account is active — your purchases are now saved to it.');
+      } else {
+        const { error } = await booksemAuth.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword });
+        if (error) throw error;
+        setShowAuthModal(false);
+        setAuthPassword('');
+      }
+    } catch (err) {
+      setAuthError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setAuthBusy(false);
+    }
   };
 
   const sampleBooks = [
@@ -841,6 +923,23 @@ export default function BooksemApp() {
               <Upload className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
               Publish Work
             </button>
+            {user ? (
+              <div className="hidden sm:flex items-center gap-2 text-xs">
+                <span className="flex items-center gap-1.5 bg-slate-800/70 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg font-semibold max-w-[170px] truncate">
+                  <User className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" /> {user.email}
+                </span>
+                <button onClick={handleSignOut} className="flex items-center gap-1 text-slate-400 hover:text-white px-2 py-1.5 rounded-lg transition border border-slate-700">
+                  <LogOut className="w-3.5 h-3.5" /> Sign Out
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setAuthMode('signin'); setAuthError(''); setShowAuthModal(true); }}
+                className="hidden sm:flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 px-3.5 py-1.5 rounded-lg font-semibold transition border border-slate-700"
+              >
+                <User className="w-3.5 h-3.5 text-amber-400" /> Sign In
+              </button>
+            )}
             <div className="relative cursor-pointer p-2 text-slate-300 hover:text-white" onClick={() => setActiveTab('marketplace')}>
               <ShoppingBag className="w-5 h-5" />
             </div>
@@ -1579,6 +1678,40 @@ export default function BooksemApp() {
               </span>
               <span className="text-slate-500">Cancel pass anytime</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ACCOUNT / AUTH MODAL */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 text-white shadow-2xl relative">
+            <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" aria-label="Close">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-bold">{authMode === 'signup' ? 'Create your free account' : 'Welcome back'}</h3>
+            <p className="text-slate-400 text-xs mt-1 mb-5">
+              {authMode === 'signup' ? 'Save your purchases and listen on any device.' : 'Sign in to access your saved books.'}
+            </p>
+            <div className="grid grid-cols-2 gap-2 mb-5 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+              {['signin', 'signup'].map((m) => (
+                <button key={m} onClick={() => { setAuthMode(m); setAuthError(''); }}
+                  className={`py-2 rounded-lg text-xs font-bold transition ${authMode === m ? 'bg-amber-500 text-slate-950 shadow' : 'text-slate-300 hover:bg-slate-800'}`}>
+                  {m === 'signin' ? 'Sign In' : 'Sign Up'}
+                </button>
+              ))}
+            </div>
+            <form onSubmit={handleAuthSubmit} className="space-y-3">
+              <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="Email address" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs" />
+              <input type="password" required minLength={6} value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} placeholder="Password (6+ characters)" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs" />
+              {authError && (
+                <div className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2">{authError}</div>
+              )}
+              <button type="submit" disabled={authBusy} className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg disabled:opacity-60 flex items-center justify-center gap-2">
+                {authBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {authBusy ? 'Please wait…' : (authMode === 'signup' ? 'Create Account' : 'Sign In')}
+              </button>
+            </form>
           </div>
         </div>
       )}
