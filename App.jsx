@@ -22,11 +22,13 @@ const STRIPE_SINGLE_BOOK_URLS = {
   '11': 'https://buy.stripe.com/5kQ5kwew22k2dyU5Ek6kg0b',
   '12': 'https://buy.stripe.com/3cI9AM4Vs3o6cuQd6M6kg0c',
 };
+const FREE_BOOK_IDS = ['13','14','15','16','17','18','19'];
 const READING_LOUNGES = [
   { id: 'stoic', emoji: '🏛️', name: 'The Stoic & Strategy Study', mood: 'Polished oak, warm lantern light, calm focus.', ambience: 'fire', books: ['1','3','4','5'], gradient: 'from-amber-900/60 via-slate-900 to-slate-950' },
   { id: 'wealth', emoji: '💼', name: 'The Wealth & Enterprise Lounge', mood: 'An executive library with a quiet coffeehouse hum.', ambience: 'cafe', books: ['2','6'], gradient: 'from-emerald-900/60 via-slate-900 to-slate-950' },
-  { id: 'gothic', emoji: '🕯️', name: 'The Gothic & Mystery Parlor', mood: 'Candlelit hearth and soft rain against the window.', ambience: 'rain', books: ['7','8','10'], gradient: 'from-purple-950/70 via-slate-900 to-slate-950' },
-  { id: 'classic', emoji: '☕', name: 'The Classic Literature Salon', mood: 'A sunlit courtyard for long afternoons with great stories.', ambience: 'cafe', books: ['9','11','12'], gradient: 'from-rose-900/50 via-slate-900 to-slate-950' },
+  { id: 'gothic', emoji: '🕯️', name: 'The Gothic & Mystery Parlor', mood: 'Candlelit hearth and soft rain against the window.', ambience: 'rain', books: ['7','8','10','13','16','17','19'], gradient: 'from-purple-950/70 via-slate-900 to-slate-950' },
+  { id: 'classic', emoji: '☕', name: 'The Classic Literature Salon', mood: 'A sunlit courtyard for long afternoons with great stories.', ambience: 'cafe', books: ['9','11','12','14','18'], gradient: 'from-rose-900/50 via-slate-900 to-slate-950' },
+  { id: 'stage', emoji: '🎭', name: 'The Radio & Theatre Stage', mood: 'Velvet curtains, a warm spotlight, full-cast stories.', ambience: 'cafe', books: ['15','16','17','18','19','13'], gradient: 'from-red-950/60 via-slate-900 to-slate-950' },
 ];
 
 function useAmbience() {
@@ -102,6 +104,7 @@ export default function BooksemApp() {
   const [purchaseFormat, setPurchaseFormat] = useState('audio');
 
   const isBookUnlocked = (bookId) => {
+    if (FREE_BOOK_IDS.includes(bookId)) return true;
     if (hasMonthlyPass) return true;
     return unlockedBooks.includes(bookId);
   };
@@ -281,11 +284,109 @@ export default function BooksemApp() {
       reviewsCount: 1750,
       cover: 'https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?auto=format&fit=crop&q=80&w=400',
       description: 'A poetic spiritual collection of twenty-eight fables offering wisdom on love, work, sorrow, freedom, and time.'
+    },
+    {
+      id: '13',
+      title: 'The Shadow Over Innsmouth',
+      author: 'H.P. Lovecraft (BBC Radio)',
+      genre: 'Horror',
+      format: 'Free Audio Drama',
+      price: 0,
+      free: true,
+      rating: 4.8,
+      reviewsCount: 0,
+      cover: 'https://dfwbddmckfzfocpruvtj.supabase.co/storage/v1/object/public/thumbnails/ca1dd9ce-a87c-414c-8efb-83570e2cde9b/1792991682389-mbj14r.jpg',
+      description: 'A traveler uncovers the terrible secret of a decaying seaside town in this chilling BBC Radio adaptation.'
+    },
+    {
+      id: '14',
+      title: 'The Inheritance Clause',
+      author: 'Regency Romance',
+      genre: 'Romance',
+      format: 'Free Audio Drama',
+      price: 0,
+      free: true,
+      rating: 4.8,
+      reviewsCount: 0,
+      cover: 'https://dfwbddmckfzfocpruvtj.supabase.co/storage/v1/object/public/thumbnails/ca1dd9ce-a87c-414c-8efb-83570e2cde9b/1792991530388-q213cq.jpg',
+      description: 'A full-length Regency romance where a strange clause in a will forces an unlikely match.'
+    },
+    {
+      id: '15',
+      title: 'Indiana Jones and the Well of Life',
+      author: 'Audio Drama ft. Jerry Scullion',
+      genre: 'Adventure',
+      format: 'Free Audio Drama',
+      price: 0,
+      free: true,
+      rating: 4.8,
+      reviewsCount: 0,
+      cover: 'https://dfwbddmckfzfocpruvtj.supabase.co/storage/v1/object/public/thumbnails/ca1dd9ce-a87c-414c-8efb-83570e2cde9b/1792991323378-f94qps.jpg',
+      description: 'A cinematic adventure audio drama following Indy on the hunt for a legendary source of life.'
+    },
+    {
+      id: '16',
+      title: 'Columbo: Murder by the Book',
+      author: 'Radio Mystery Theatre',
+      genre: 'Mystery',
+      format: 'Free Audio Drama',
+      price: 0,
+      free: true,
+      rating: 4.8,
+      reviewsCount: 0,
+      cover: 'https://dfwbddmckfzfocpruvtj.supabase.co/storage/v1/object/public/thumbnails/ca1dd9ce-a87c-414c-8efb-83570e2cde9b/1792991093407-b0nix.jpg',
+      description: 'The rumpled lieutenant takes on a mystery writer who thinks he has planned the perfect murder.'
+    },
+    {
+      id: '17',
+      title: 'The Book Club Blunder',
+      author: 'Inspector Purbright (BBC Radio)',
+      genre: 'Mystery',
+      format: 'Free Audio Drama',
+      price: 0,
+      free: true,
+      rating: 4.8,
+      reviewsCount: 0,
+      cover: 'https://dfwbddmckfzfocpruvtj.supabase.co/storage/v1/object/public/thumbnails/ca1dd9ce-a87c-414c-8efb-83570e2cde9b/1792991366376-lpns4.jpg',
+      description: 'A cozy English village mystery with Inspector Purbright, from BBC Radio.'
+    },
+    {
+      id: '18',
+      title: 'Blithe Spirit',
+      author: 'Noel Coward (BBC Theatre)',
+      genre: 'Classic Comedy',
+      format: 'Free Audio Drama',
+      price: 0,
+      free: true,
+      rating: 4.8,
+      reviewsCount: 0,
+      cover: 'https://dfwbddmckfzfocpruvtj.supabase.co/storage/v1/object/public/thumbnails/ca1dd9ce-a87c-414c-8efb-83570e2cde9b/1792991155387-tlrqk8p.jpg',
+      description: 'A seance goes hilariously wrong when the late first wife of a novelist returns to haunt his new marriage.'
+    },
+    {
+      id: '19',
+      title: 'The Rotted Crown',
+      author: 'Full Cast Audio Drama',
+      genre: 'Dark Fantasy',
+      format: 'Free Audio Drama',
+      price: 0,
+      free: true,
+      rating: 4.8,
+      reviewsCount: 0,
+      cover: 'https://dfwbddmckfzfocpruvtj.supabase.co/storage/v1/object/public/thumbnails/ca1dd9ce-a87c-414c-8efb-83570e2cde9b/1792991192532-jhh74f.jpg',
+      description: 'A grim full-cast fantasy of a cursed throne and the kingdom rotting beneath it.'
     }
   ];
 
   // COMPLETE CHAPTER PLAYLISTS FOR ALL 12 BOOKS (Verified Direct Archive Endpoints)
   const BOOK_CHAPTERS = {
+    '13': [['Full Drama (2h 22m)', 'https://miytube.s3.us-east-1.amazonaws.com/videos/The_Shadow_Over_Insmouth_-_H.P._Lovecraft_-_BBC_Radio-be7325.mp4']],
+    '14': [['Full Audiobook (2h 23m)', 'https://miytube.s3.us-east-1.amazonaws.com/videos/The_Inheritance_Clause_Full-Length_Regency_Romance_Audiobook-cbb9f4.mp4']],
+    '15': [['Full Drama (1h 45m)', 'https://miytube.s3.us-east-1.amazonaws.com/videos/Indiana_Jones_and_the_Well_Of_Life_AudioBook_Audio_Drama_Featuring_Jerry_Scullion-81fa64.mp4']],
+    '16': [['Full Drama (1h 55m)', 'https://miytube.s3.us-east-1.amazonaws.com/videos/Audio_Drama_-_Columbo_MURDER_BY_THE_BOOK-6788eb.mp4']],
+    '17': [['Full Drama (1h 11m)', 'https://miytube.s3.us-east-1.amazonaws.com/videos/The_Book_Club_Blunder_Inspector_Purbright_Mysteries_BBC_Radio_Drama-653764.mp4']],
+    '18': [['Full Drama (1h 27m)', 'https://miytube.s3.us-east-1.amazonaws.com/videos/Blithe_Spirit_Noel_Coward_-_BBC_Saturday_Night_Theatre_Classic_Chesterton_Radio_Drama-5995b9.mp4']],
+    '19': [['Full Drama (31m)', 'https://miytube.s3.us-east-1.amazonaws.com/videos/Dark_Fantasy_Audiobook_The_Rotted_Crown_Full_Cast_Audio_Drama-d0c46d.mp4']],
     '1': [
       ['Chapters 1-2: Laying Plans & Waging War', 'https://archive.org/download/art_of_war_librivox/art_of_war_01-02_sun_tzu_64kb.mp3'],
       ['Chapters 3-4: Attack by Stratagem & Tactical Dispositions', 'https://archive.org/download/art_of_war_librivox/art_of_war_03-04_sun_tzu_64kb.mp3'],
@@ -877,7 +978,7 @@ export default function BooksemApp() {
                           {book.title}
                         </h3>
                         <p className="text-xs text-slate-400 mb-1">by {book.author}</p>
-                        <p className="text-[10px] uppercase tracking-wider text-amber-400/80 font-semibold mb-2">🎧 Audiobook • 📖 Paperback • 📚 Hardcover</p>
+                        <p className="text-[10px] uppercase tracking-wider text-amber-400/80 font-semibold mb-2">{book.free ? '🎭 Free Audio Drama • Instant Play' : '🎧 Audiobook • 📖 Paperback • 📚 Hardcover'}</p>
                         <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
                           {book.description}
                         </p>
@@ -886,8 +987,8 @@ export default function BooksemApp() {
                       <div className="flex items-center justify-between pt-3 border-t border-slate-800">
                         <div>
                           <span className="text-xs text-slate-500 block">Price</span>
-                          <span className="text-lg font-bold text-white">
-                            ${book.price}
+                          <span className={`text-lg font-bold ${book.free ? 'text-emerald-400' : 'text-white'}`}>
+                            {book.free ? 'FREE' : `$${book.price}`}
                           </span>
                         </div>
                         <div className="flex space-x-2">
@@ -897,9 +998,11 @@ export default function BooksemApp() {
                             title="Listen to Chapter 1 free immediately"
                           >
                             <Play className="w-3 h-3 fill-slate-950" />
-                            <span>Listen Free</span>
+                            <span>{book.free ? 'Play Now' : 'Listen Free'}</span>
                           </button>
-                          {isBookUnlocked(book.id) ? (
+                          {book.free ? (
+                            <span className="px-2.5 py-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-semibold">Free</span>
+                          ) : isBookUnlocked(book.id) ? (
                             <button 
                               onClick={() => openBook(book.id, true)}
                               className="px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-semibold flex items-center gap-1"
