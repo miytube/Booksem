@@ -52,6 +52,7 @@ export default function BooksemApp() {
   });
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [paywallTargetBook, setPaywallTargetBook] = useState(null);
+  const [purchaseFormat, setPurchaseFormat] = useState('audio');
 
   const isBookUnlocked = (bookId) => {
     if (hasMonthlyPass) return true;
@@ -819,7 +820,8 @@ export default function BooksemApp() {
                         <h3 className="font-bold text-white text-base line-clamp-1 group-hover:text-amber-400 transition cursor-pointer" onClick={() => openBook(book.id, true)}>
                           {book.title}
                         </h3>
-                        <p className="text-xs text-slate-400 mb-2">by {book.author}</p>
+                        <p className="text-xs text-slate-400 mb-1">by {book.author}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-amber-400/80 font-semibold mb-2">🎧 Audiobook • 📖 Paperback • 📚 Hardcover</p>
                         <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
                           {book.description}
                         </p>
@@ -852,6 +854,7 @@ export default function BooksemApp() {
                             <button 
                               onClick={() => {
                                 setPaywallTargetBook(book);
+                                setPurchaseFormat('audio');
                                 setShowPaywallModal(true);
                               }}
                               className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1 border border-slate-700"
@@ -1232,6 +1235,24 @@ export default function BooksemApp() {
               </p>
             </div>
 
+            <div className="grid grid-cols-3 gap-2 mb-5 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+              {[
+                { key: 'audio', label: '🎧 Audiobook', price: '$' + paywallTargetBook.price },
+                { key: 'paperback', label: '📖 Paperback', price: '$14.99' },
+                { key: 'hardcover', label: '📚 Hardcover', price: '$24.99' },
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setPurchaseFormat(f.key)}
+                  className={`py-2 rounded-lg text-xs font-bold transition flex flex-col items-center ${purchaseFormat === f.key ? 'bg-amber-500 text-slate-950 shadow' : 'text-slate-300 hover:bg-slate-800'}`}
+                >
+                  <span>{f.label}</span>
+                  <span className={`text-[11px] font-semibold ${purchaseFormat === f.key ? 'text-slate-900' : 'text-slate-500'}`}>{f.price}</span>
+                </button>
+              ))}
+            </div>
+
+            {purchaseFormat === 'audio' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               {/* Option A: Buy this single book */}
               <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
@@ -1284,6 +1305,35 @@ export default function BooksemApp() {
                 </button>
               </div>
             </div>
+            ) : (
+            <div className="mb-6 bg-slate-950/60 border border-slate-800 rounded-xl p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs uppercase font-semibold text-slate-400 tracking-wider">{purchaseFormat === 'paperback' ? 'Paperback Edition' : 'Hardcover Edition'}</div>
+                  <h4 className="font-bold text-white text-base mt-1">{paywallTargetBook.title}</h4>
+                  <p className="text-xs text-slate-400">by {paywallTargetBook.author}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-extrabold text-amber-400">{purchaseFormat === 'paperback' ? '$14.99' : '$24.99'}</div>
+                  <div className="text-[11px] text-slate-500">+ shipping</div>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 mt-3">
+                {purchaseFormat === 'paperback'
+                  ? 'Classic softcover print edition, delivered to your door.'
+                  : 'Premium hardbound edition — perfect for collectors and gifts.'}
+              </p>
+              <div className="mt-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-xs text-emerald-300">
+                📦 Ships directly from independent bookstore partners. Tracked delivery within 3–5 business days.
+              </div>
+              <button
+                disabled
+                className="mt-4 w-full bg-slate-800 text-slate-400 font-bold text-xs py-2.5 rounded-lg cursor-not-allowed"
+              >
+                Print editions coming soon
+              </button>
+            </div>
+            )}
 
             <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
               <span className="flex items-center gap-1.5">
