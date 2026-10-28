@@ -872,285 +872,262 @@ export default function BooksemApp() {
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  const [shopQuery, setShopQuery] = useState('');
+  const [shopDept, setShopDept] = useState('all');
+  const paidBooks = sampleBooks.filter(b => !b.free);
+  const freeBooks = sampleBooks.filter(b => b.free);
+  const bestSellers = [...paidBooks].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  const q = shopQuery.trim().toLowerCase();
+  const searchResults = q
+    ? sampleBooks.filter(b => `${b.title} ${b.author} ${b.genre}`.toLowerCase().includes(q))
+    : null;
+  const goShop = (dept) => { setShopDept(dept); setShopQuery(''); setActiveTab('marketplace'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const deptBooks = shopDept === 'audio-dramas' ? freeBooks : shopDept === 'best-sellers' ? bestSellers : shopDept === 'all-books' ? sampleBooks : null;
+
+  const openBuy = (book) => { setPaywallTargetBook(book); setPurchaseFormat('audio'); setShowPaywallModal(true); };
+
+  const BookCard = ({ book }) => (
+    <div className="group flex flex-col bg-white">
+      <div className="relative cursor-pointer bg-[#F4F1EA] p-4 flex items-center justify-center aspect-[3/4]" onClick={() => openBook(book.id, true)}>
+        <img src={book.cover} alt={book.title} className="max-h-full max-w-full object-cover shadow-[4px_6px_14px_rgba(12,35,64,0.35)] group-hover:-translate-y-1 transition duration-300" />
+        {book.free && <span className="absolute top-2 left-2 bg-emerald-700 text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wide">Free</span>}
+        {!book.free && isBookUnlocked(book.id) && <span className="absolute top-2 left-2 bg-[#0C2340] text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wide">Owned</span>}
+      </div>
+      <div className="pt-3 flex-1 flex flex-col">
+        <h3 onClick={() => openBook(book.id, true)} className="text-sm font-semibold text-[#0C2340] leading-snug line-clamp-2 hover:underline cursor-pointer">{book.title}</h3>
+        <p className="text-xs text-slate-600 mt-0.5">by <span className="text-[#B4121B]">{book.author}</span></p>
+        <div className="flex items-center gap-0.5 mt-1">
+          {[1,2,3,4,5].map(i => <Star key={i} className={`w-3 h-3 ${i <= Math.round(book.rating || 0) ? 'fill-[#F2A900] text-[#F2A900]' : 'text-slate-300'}`} />)}
+          <span className="text-[10px] text-slate-500 ml-1">{book.rating}</span>
+        </div>
+        <p className="text-[11px] text-slate-500 mt-1">{book.free ? 'Audio Drama' : 'Audiobook · Paperback · Hardcover'}</p>
+        <p className={`text-base font-bold mt-1 ${book.free ? 'text-emerald-700' : 'text-[#B4121B]'}`}>{book.free ? 'FREE' : `$${book.price}`}</p>
+        <div className="mt-auto pt-2 flex gap-1.5">
+          <button onClick={() => openBook(book.id, true)} className="flex-1 text-xs font-bold bg-[#0C2340] hover:bg-[#16365E] text-white py-2 flex items-center justify-center gap-1">
+            <Play className="w-3 h-3 fill-white" /> {book.free ? 'Play' : 'Ch. 1 Free'}
+          </button>
+          {!book.free && !isBookUnlocked(book.id) && (
+            <button onClick={() => openBuy(book)} className="flex-1 text-xs font-bold bg-[#B4121B] hover:bg-[#8E0E15] text-white py-2">Add to Cart</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const Shelf = ({ title, subtitle, books, action }) => (
+    <section className="bg-white border border-slate-200 p-5">
+      <div className="flex items-end justify-between border-b-2 border-[#0C2340] pb-2 mb-5">
+        <div>
+          <h2 className="text-xl font-serif font-bold text-[#0C2340]">{title}</h2>
+          {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+        </div>
+        {action && <button onClick={action} className="text-xs font-semibold text-[#B4121B] hover:underline flex items-center gap-1">See All <ArrowRight className="w-3 h-3" /></button>}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+        {books.map(b => <BookCard key={b.id} book={b} />)}
+      </div>
+    </section>
+  );
+
+  const navItems = [
+    { label: 'Home', on: () => goShop('all'), active: activeTab === 'marketplace' && shopDept === 'all' },
+    { label: 'All Books', on: () => goShop('all-books'), active: activeTab === 'marketplace' && shopDept === 'all-books' },
+    { label: 'Best Sellers', on: () => goShop('best-sellers'), active: activeTab === 'marketplace' && shopDept === 'best-sellers' },
+    { label: 'Audio Dramas', on: () => goShop('audio-dramas'), active: activeTab === 'marketplace' && shopDept === 'audio-dramas' },
+    { label: 'Reading Lounges', on: () => { setActiveTab('lounges'); setActiveLounge(null); }, active: activeTab === 'lounges' },
+    { label: 'Listen & Read', on: () => setActiveTab('reader'), active: activeTab === 'reader' },
+    { label: 'Author Studio', on: () => setActiveTab('studio'), active: activeTab === 'studio' },
+    { label: 'Live Author Room', on: () => setActiveTab('interview'), active: activeTab === 'interview' },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* 1. TOP NAVIGATION */}
-      <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('marketplace')}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center font-bold text-slate-950 text-xl shadow-lg shadow-amber-500/20">
-              B
-            </div>
-            <div>
-              <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent">
-                Booksem
-              </span>
-              <span className="text-[10px] text-slate-400 block -mt-1 font-medium">Listen & Read Audiobooks</span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-[#F4F4F2] text-slate-800 flex flex-col font-sans">
+      {/* PROMO BAR */}
+      <div className="bg-[#B4121B] text-white text-xs font-semibold text-center py-2 px-4">
+        {hasMonthlyPass ? '★ Reader\u2019s Club Member — unlimited listening is active' : (
+          <button onClick={() => { setPaywallTargetBook(selectedBook); setShowPaywallModal(true); }} className="hover:underline">
+            Join the Booksem Reader’s Club — Unlimited audiobooks for $9.99/mo. <span className="underline">Join Now ›</span>
+          </button>
+        )}
+      </div>
 
-          <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search classics, stoicism, self-help, or authors..."
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-full py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50"
-              />
-            </div>
+      {/* MAIN HEADER */}
+      <header className="bg-[#0C2340] text-white sticky top-0 z-50 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4 sm:gap-8">
+          <button onClick={() => goShop('all')} className="flex items-baseline gap-1 flex-shrink-0">
+            <span className="text-3xl font-serif font-black tracking-tight">Booksem</span>
+            <span className="text-3xl font-black text-[#F2A900]">!</span>
+          </button>
+          <div className="flex-1 flex">
+            <input
+              value={shopQuery}
+              onChange={e => { setShopQuery(e.target.value); if (activeTab !== 'marketplace') setActiveTab('marketplace'); }}
+              placeholder="Search by title, author or genre"
+              className="flex-1 min-w-0 bg-white text-slate-900 text-sm px-4 py-2.5 focus:outline-none placeholder-slate-400"
+            />
+            <button className="bg-[#F2A900] hover:bg-[#D99800] px-4 text-[#0C2340]" aria-label="Search"><Search className="w-5 h-5" /></button>
           </div>
-
-          <div className="flex items-center space-x-3">
-            {hasMonthlyPass ? (
-              <span className="hidden sm:inline-flex items-center gap-1 text-xs bg-amber-500/15 text-amber-300 px-3 py-1.5 rounded-full border border-amber-500/30 font-semibold">
-                <Sparkles className="w-3.5 h-3.5" /> All-Access Pass Active
-              </span>
-            ) : (
-              <button
-                onClick={() => {
-                  setPaywallTargetBook(selectedBook);
-                  setShowPaywallModal(true);
-                }}
-                className="hidden sm:flex items-center gap-1.5 text-xs bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 px-3.5 py-1.5 rounded-lg font-bold transition shadow-md shadow-amber-500/20"
-              >
-                <Sparkles className="w-3.5 h-3.5" /> Get All-Access ($9.99/mo)
-              </button>
-            )}
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition border border-slate-700 hidden sm:flex items-center"
-            >
-              <Upload className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
-              Publish Work
-            </button>
+          <div className="hidden md:flex items-center gap-5 text-xs">
             {user ? (
-              <div className="hidden sm:flex items-center gap-2 text-xs">
-                <span className="flex items-center gap-1.5 bg-slate-800/70 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg font-semibold max-w-[170px] truncate">
-                  <User className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" /> {user.email}
-                </span>
-                <button onClick={handleSignOut} className="flex items-center gap-1 text-slate-400 hover:text-white px-2 py-1.5 rounded-lg transition border border-slate-700">
-                  <LogOut className="w-3.5 h-3.5" /> Sign Out
-                </button>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1.5 max-w-[160px] truncate"><User className="w-4 h-4 text-[#F2A900]" /> {user.email}</span>
+                <button onClick={handleSignOut} className="flex items-center gap-1 hover:text-[#F2A900]"><LogOut className="w-4 h-4" /> Sign Out</button>
               </div>
             ) : (
-              <button
-                onClick={() => { setAuthMode('signin'); setAuthError(''); setShowAuthModal(true); }}
-                className="hidden sm:flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 px-3.5 py-1.5 rounded-lg font-semibold transition border border-slate-700"
-              >
-                <User className="w-3.5 h-3.5 text-amber-400" /> Sign In
+              <button onClick={() => { setAuthMode('signin'); setAuthError(''); setShowAuthModal(true); }} className="flex flex-col items-start leading-tight hover:text-[#F2A900]">
+                <span className="text-[10px] text-slate-300">Hello, Reader</span>
+                <span className="font-bold flex items-center gap-1"><User className="w-4 h-4" /> Sign In / Join</span>
               </button>
             )}
-            <div className="relative cursor-pointer p-2 text-slate-300 hover:text-white" onClick={() => setActiveTab('marketplace')}>
-              <ShoppingBag className="w-5 h-5" />
-            </div>
+            <button onClick={() => setShowUploadModal(true)} className="flex items-center gap-1 hover:text-[#F2A900] font-semibold"><Upload className="w-4 h-4" /> Publish</button>
+            <button onClick={() => goShop('all-books')} className="flex items-center gap-1 hover:text-[#F2A900] font-semibold"><ShoppingBag className="w-5 h-5" /> Cart</button>
           </div>
         </div>
+        {/* DEPARTMENT NAV */}
+        <nav className="bg-[#16365E] border-t border-white/10">
+          <div className="max-w-7xl mx-auto px-2 flex overflow-x-auto">
+            {navItems.map(n => (
+              <button key={n.label} onClick={n.on} className={`whitespace-nowrap px-4 py-2.5 text-xs font-bold uppercase tracking-wide border-b-4 transition ${n.active ? 'border-[#F2A900] text-white bg-white/10' : 'border-transparent text-slate-200 hover:text-white hover:bg-white/5'}`}>
+                {n.label}
+              </button>
+            ))}
+          </div>
+        </nav>
       </header>
 
-      {/* 2. SUB NAVIGATION TABS */}
-      <nav className="border-b border-slate-800/80 bg-slate-900/30">
-        <div className="max-w-7xl mx-auto px-4 flex space-x-1 sm:space-x-4 py-2">
-          <button
-            onClick={() => setActiveTab('marketplace')}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
-              activeTab === 'marketplace' ? 'bg-amber-500/10 text-amber-400 font-semibold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <BookOpen className="w-4 h-4 inline mr-2" />
-            Storefront
-          </button>
-          <button
-            onClick={() => { setActiveTab('lounges'); setActiveLounge(null); }}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
-              activeTab === 'lounges' ? 'bg-amber-500/10 text-amber-400 font-semibold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <span className="mr-2">🛋️</span>
-            Reading Lounges
-          </button>
-          <button
-            onClick={() => setActiveTab('reader')}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
-              activeTab === 'reader' ? 'bg-amber-500/10 text-amber-400 font-semibold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Headphones className="w-4 h-4 inline mr-2" />
-            Listen & Read
-          </button>
-          <button
-            onClick={() => setActiveTab('studio')}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
-              activeTab === 'studio' ? 'bg-amber-500/10 text-amber-400 font-semibold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <PenTool className="w-4 h-4 inline mr-2" />
-            Author Studio
-          </button>
-          <button
-            onClick={() => setActiveTab('interview')}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
-              activeTab === 'interview' ? 'bg-amber-500/10 text-amber-400 font-semibold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Video className="w-4 h-4 inline mr-2" />
-            Live Author Room
-          </button>
-        </div>
-      </nav>
+      <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1">
+        {activeTab === 'marketplace' && searchResults && (
+          <Shelf title={`Results for “${shopQuery}”`} subtitle={`${searchResults.length} title${searchResults.length === 1 ? '' : 's'} found`} books={searchResults} />
+        )}
 
-      {/* 3. MAIN CONTENT BODY */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
-        
-        {/* TAB 1: MARKETPLACE */}
-        {activeTab === 'marketplace' && (
-          <div className="space-y-8">
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-amber-600/20 via-slate-900 to-slate-900 border border-slate-800 p-8 sm:p-12">
-              <div className="max-w-xl">
-                <span className="text-xs font-bold uppercase tracking-widest text-amber-400 mb-2 block">
-                  Listen & Read Worldwide Classics
-                </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-                  High-Quality Audiobooks Read By Real Human Voices
-                </h1>
-                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
-                  Chapter 1 free for every single title. Stream the world's most enduring wisdom, stoic philosophies, timeless novels, and strategic masterpieces on any device.
-                </p>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <button 
-                    onClick={() => openBook('1', true)}
-                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-amber-500/20 flex items-center"
-                  >
-                    <Play className="w-4 h-4 mr-2 fill-slate-950" />
-                    Start Listening Now (Ch. 1 Free)
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setPaywallTargetBook(sampleBooks[0]);
-                      setShowPaywallModal(true);
-                    }}
-                    className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl text-sm transition border border-slate-700 flex items-center"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2 text-amber-400" />
-                    All-Access Pass ($9.99/mo)
-                  </button>
+        {activeTab === 'marketplace' && !searchResults && deptBooks && (
+          <Shelf
+            title={shopDept === 'audio-dramas' ? 'Full-Cast Audio Dramas' : shopDept === 'best-sellers' ? 'Best Sellers' : 'All Books'}
+            subtitle={shopDept === 'audio-dramas' ? 'Free to play — complete productions, no sign-up' : `${deptBooks.length} titles`}
+            books={deptBooks}
+          />
+        )}
+
+        {activeTab === 'marketplace' && !searchResults && !deptBooks && (
+          <div className="space-y-6">
+            {/* HERO */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="md:col-span-2 bg-[#0C2340] text-white p-8 sm:p-10 flex flex-col sm:flex-row items-center gap-8 relative overflow-hidden">
+                <div className="flex-1 relative z-10">
+                  <span className="inline-block bg-[#F2A900] text-[#0C2340] text-[10px] font-black uppercase tracking-widest px-2 py-1">Featured Title</span>
+                  <h1 className="text-3xl sm:text-4xl font-serif font-bold mt-3 leading-tight">{sampleBooks[0].title}</h1>
+                  <p className="text-sm text-slate-300 mt-1">by {sampleBooks[0].author}</p>
+                  <p className="text-sm text-slate-200 mt-4 leading-relaxed max-w-md">Real human narration, every chapter. Chapter 1 is always free — start listening in seconds.</p>
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <button onClick={() => openBook('1', true)} className="bg-[#B4121B] hover:bg-[#8E0E15] text-white font-bold text-sm px-5 py-3 flex items-center gap-2"><Play className="w-4 h-4 fill-white" /> Listen to Chapter 1 Free</button>
+                    <button onClick={() => openBuy(sampleBooks[0])} className="bg-white text-[#0C2340] hover:bg-slate-100 font-bold text-sm px-5 py-3">Buy ${sampleBooks[0].price}</button>
+                  </div>
                 </div>
+                <img src={sampleBooks[0].cover} alt={sampleBooks[0].title} className="w-40 sm:w-48 shadow-[8px_12px_30px_rgba(0,0,0,0.5)] rotate-2 relative z-10" />
+              </div>
+              <div className="grid grid-rows-2 gap-4">
+                <button onClick={() => goShop('audio-dramas')} className="bg-[#F2A900] text-[#0C2340] p-6 text-left hover:brightness-95">
+                  <p className="text-[10px] font-black uppercase tracking-widest">New on Booksem</p>
+                  <p className="text-xl font-serif font-bold mt-1">Free Full-Cast Audio Dramas</p>
+                  <p className="text-xs mt-1">Sherlock Holmes, Lovecraft & more ›</p>
+                </button>
+                <button onClick={() => setActiveTab('interview')} className="bg-[#B4121B] text-white p-6 text-left hover:brightness-110">
+                  <p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1"><Video className="w-3 h-3" /> Live Author Room</p>
+                  <p className="text-xl font-serif font-bold mt-1">Meet the Authors, Live</p>
+                  <p className="text-xs mt-1 text-red-100">See upcoming interviews ›</p>
+                </button>
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-white">Featured Audiobooks & Classics</h2>
-                <span className="text-xs text-slate-400">{sampleBooks.length} titles available</span>
+            {/* PERKS STRIP */}
+            <div className="grid grid-cols-2 md:grid-cols-4 bg-white border border-slate-200 divide-x divide-slate-200 text-center">
+              {[
+                [Headphones, 'Real Human Narration'],
+                [Play, 'Chapter 1 Always Free'],
+                [ShieldCheck, 'Secure Stripe Checkout'],
+                [BookOpen, 'Paperback & Hardcover Soon'],
+              ].map(([Icon, label]) => (
+                <div key={label} className="py-3 px-2 flex items-center justify-center gap-2 text-xs font-semibold text-[#0C2340]"><Icon className="w-4 h-4 text-[#B4121B]" /> {label}</div>
+              ))}
+            </div>
+
+            <Shelf title="Best Sellers" subtitle="Our most-loved audiobooks this week" books={bestSellers.slice(0, 6)} action={() => goShop('best-sellers')} />
+
+            {/* READER'S CLUB */}
+            <div className="bg-white border-2 border-[#0C2340] p-6 sm:p-8 flex flex-col md:flex-row items-center gap-6">
+              <div className="w-20 h-20 rounded-full bg-[#0C2340] text-[#F2A900] flex items-center justify-center flex-shrink-0"><Sparkles className="w-9 h-9" /></div>
+              <div className="flex-1 text-center md:text-left">
+                <h2 className="text-2xl font-serif font-bold text-[#0C2340]">Booksem Reader’s Club</h2>
+                <p className="text-sm text-slate-600 mt-1">Unlimited listening to every audiobook in the store, every chapter, on any device. Cancel anytime.</p>
               </div>
+              <div className="text-center">
+                <p className="text-3xl font-black text-[#B4121B]">$9.99<span className="text-sm text-slate-500 font-semibold">/mo</span></p>
+                {hasMonthlyPass ? (
+                  <span className="inline-block mt-2 text-xs font-bold text-emerald-700">✓ You’re a member</span>
+                ) : (
+                  <a href={STRIPE_ALL_ACCESS_URL} className="inline-block mt-2 bg-[#B4121B] hover:bg-[#8E0E15] text-white font-bold text-sm px-6 py-2.5">Join the Club</a>
+                )}
+              </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {sampleBooks.map((book) => (
-                  <div key={book.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col hover:border-amber-500/40 transition group">
-                    <div className="relative aspect-[3/4] bg-slate-950 overflow-hidden cursor-pointer" onClick={() => openBook(book.id, true)}>
-                      <img 
-                        src={book.cover} 
-                        alt={book.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                      />
-                      <div className="absolute top-3 left-3">
-                        <span className="bg-slate-950/80 backdrop-blur text-amber-400 text-xs font-semibold px-2 py-1 rounded">
-                          {book.format}
-                        </span>
-                      </div>
-                      <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-lg">
-                          <Play className="w-5 h-5 ml-0.5 fill-slate-950" />
-                        </div>
-                      </div>
-                    </div>
+            <Shelf title="Full-Cast Audio Dramas" subtitle="Free complete productions — press play, no sign-up needed" books={freeBooks.slice(0, 6)} action={() => goShop('audio-dramas')} />
 
-                    <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                      <div>
-                        <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-                          <span>{book.genre}</span>
-                          <span className="flex items-center text-amber-400">
-                            <Star className="w-3 h-3 fill-amber-400 mr-1" />
-                            {book.rating}
-                          </span>
-                        </div>
-                        <h3 className="font-bold text-white text-base line-clamp-1 group-hover:text-amber-400 transition cursor-pointer" onClick={() => openBook(book.id, true)}>
-                          {book.title}
-                        </h3>
-                        <p className="text-xs text-slate-400 mb-1">by {book.author}</p>
-                        <p className="text-[10px] uppercase tracking-wider text-amber-400/80 font-semibold mb-2">{book.free ? '🎭 Free Audio Drama • Instant Play' : '🎧 Audiobook • 📖 Paperback • 📚 Hardcover'}</p>
-                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                          {book.description}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-800">
-                        <div>
-                          <span className="text-xs text-slate-500 block">Price</span>
-                          <span className={`text-lg font-bold ${book.free ? 'text-emerald-400' : 'text-white'}`}>
-                            {book.free ? 'FREE' : `$${book.price}`}
-                          </span>
-                        </div>
-                        <div className="flex space-x-2">
-                          <button 
-                            onClick={() => openBook(book.id, true)}
-                            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition"
-                            title="Listen to Chapter 1 free immediately"
-                          >
-                            <Play className="w-3 h-3 fill-slate-950" />
-                            <span>{book.free ? 'Play Now' : 'Listen Free'}</span>
-                          </button>
-                          {book.free ? (
-                            <span className="px-2.5 py-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-semibold">Free</span>
-                          ) : isBookUnlocked(book.id) ? (
-                            <button 
-                              onClick={() => openBook(book.id, true)}
-                              className="px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-semibold flex items-center gap-1"
-                            >
-                              <Check className="w-3 h-3" /> Unlocked
-                            </button>
-                          ) : (
-                            <button 
-                              onClick={() => {
-                                setPaywallTargetBook(book);
-                                setPurchaseFormat('audio');
-                                setShowPaywallModal(true);
-                              }}
-                              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1 border border-slate-700"
-                              title="Unlock full book"
-                            >
-                              <Lock className="w-3 h-3 text-amber-400" />
-                              <span>Buy</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            {/* LOUNGES SHOWCASE */}
+            <section className="bg-white border border-slate-200 p-5">
+              <div className="flex items-end justify-between border-b-2 border-[#0C2340] pb-2 mb-5">
+                <div>
+                  <h2 className="text-xl font-serif font-bold text-[#0C2340]">Step Into a Reading Lounge</h2>
+                  <p className="text-xs text-slate-500">Pull up a chair — themed rooms with ambient sound and a curated shelf</p>
+                </div>
+                <button onClick={() => { setActiveTab('lounges'); setActiveLounge(null); }} className="text-xs font-semibold text-[#B4121B] hover:underline flex items-center gap-1">All Lounges <ArrowRight className="w-3 h-3" /></button>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                {READING_LOUNGES.map(room => (
+                  <button key={room.id} onClick={() => { setActiveTab('lounges'); setActiveLounge(room.id); }} className={`text-left p-4 bg-[#0C2340] bg-gradient-to-br ${room.gradient} text-white hover:brightness-110 min-h-[120px] flex flex-col`}>
+                    <span className="text-2xl">{room.emoji}</span>
+                    <span className="font-serif font-bold mt-2 leading-tight">{room.name}</span>
+                    <span className="text-[11px] text-white/70 mt-auto pt-2">{room.books.length} books on the shelf</span>
+                  </button>
                 ))}
               </div>
+            </section>
+
+            <Shelf title="Timeless Classics" subtitle="Every title read by real human voices" books={paidBooks.slice(6, 12)} action={() => goShop('all-books')} />
+
+            {/* AUTHOR STRIP */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <button onClick={() => setActiveTab('studio')} className="bg-white border border-slate-200 p-6 text-left flex items-center gap-4 hover:border-[#0C2340]">
+                <PenTool className="w-10 h-10 text-[#B4121B] flex-shrink-0" />
+                <div><p className="font-serif font-bold text-lg text-[#0C2340]">Author Studio</p><p className="text-xs text-slate-600">Writers: publish your book and audiobook on Booksem.</p></div>
+              </button>
+              <button onClick={() => setActiveTab('interview')} className="bg-white border border-slate-200 p-6 text-left flex items-center gap-4 hover:border-[#0C2340]">
+                <Mic className="w-10 h-10 text-[#B4121B] flex-shrink-0" />
+                <div><p className="font-serif font-bold text-lg text-[#0C2340]">Live Author Room</p><p className="text-xs text-slate-600">Live conversations with authors — see what’s coming up.</p></div>
+              </button>
             </div>
           </div>
         )}
+
 
         {/* TAB 2: READER & AUDIOBOOK PLAYER */}
         {activeTab === 'reader' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-white">{selectedBook.title}</h1>
-                <p className="text-slate-400 text-sm">Author: {selectedBook.author} | Narrated by: Real Human Voice (Public Domain Archive / LibriVox)</p>
+                <h1 className="text-2xl font-bold text-[#0C2340]">{selectedBook.title}</h1>
+                <p className="text-slate-500 text-sm">Author: {selectedBook.author} | Narrated by: Real Human Voice (Public Domain Archive / LibriVox)</p>
               </div>
               <div className="flex space-x-2">
                 <button 
                   onClick={() => setFontSize(Math.max(14, fontSize - 2))}
-                  className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300"
+                  className="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600"
                   title="Smaller font"
                 >
                   Font A-
                 </button>
                 <button 
                   onClick={() => setFontSize(Math.min(26, fontSize + 2))}
-                  className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300"
+                  className="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600"
                   title="Larger font"
                 >
                   Font A+
@@ -1160,14 +1137,14 @@ export default function BooksemApp() {
 
             {/* Membership & Unlock status banner */}
             {!isBookUnlocked(selectedBookId) && (
-              <div className="bg-gradient-to-r from-amber-500/15 via-slate-900 to-amber-500/15 border border-amber-500/30 rounded-xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="bg-gradient-to-r from-red-700/15 via-white to-red-700/15 border border-red-700/30 rounded-xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-3 text-center sm:text-left">
-                  <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-red-700/20 border border-red-700/40 flex items-center justify-center text-red-700 flex-shrink-0">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-white">Listening to Free Preview (Chapter 1)</div>
-                    <div className="text-xs text-slate-400">Chapters 2–{chapters.length} require unlocking this title or an All-Access Pass.</div>
+                    <div className="text-sm font-semibold text-[#0C2340]">Listening to Free Preview (Chapter 1)</div>
+                    <div className="text-xs text-slate-500">Chapters 2–{chapters.length} require unlocking this title or an All-Access Pass.</div>
                   </div>
                 </div>
                 <button
@@ -1175,7 +1152,7 @@ export default function BooksemApp() {
                     setPaywallTargetBook(selectedBook);
                     setShowPaywallModal(true);
                   }}
-                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition shadow-md shadow-amber-500/20 whitespace-nowrap"
+                  className="px-4 py-1.5 bg-red-700 hover:bg-red-800 text-white font-bold text-xs rounded-lg transition shadow-md shadow-red-700/20 whitespace-nowrap"
                 >
                   Unlock Full Audiobook (${selectedBook.price})
                 </button>
@@ -1183,7 +1160,7 @@ export default function BooksemApp() {
             )}
 
             {/* REAL Working Audio Player Bar */}
-            <div className="bg-gradient-to-r from-slate-900 to-amber-950/40 border border-amber-900/30 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+            <div className="bg-gradient-to-r from-white to-amber-950/40 border border-red-900/30 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
               {/* HTML5 Audio Element */}
               <audio
                 ref={audioRef}
@@ -1209,11 +1186,11 @@ export default function BooksemApp() {
               />
 
               <div className="flex items-center space-x-2 w-full md:w-auto">
-                <button onClick={() => goToChapter(chapterIdx - 1)} disabled={chapterIdx === 0} className="p-2 text-slate-300 hover:text-amber-400 disabled:opacity-30" title="Previous chapter"><SkipBack className="w-5 h-5" /></button>
-                <button onClick={() => skip(-15)} className="p-2 text-slate-300 hover:text-amber-400" title="Back 15 seconds"><RotateCcw className="w-5 h-5" /></button>
+                <button onClick={() => goToChapter(chapterIdx - 1)} disabled={chapterIdx === 0} className="p-2 text-slate-600 hover:text-red-700 disabled:opacity-30" title="Previous chapter"><SkipBack className="w-5 h-5" /></button>
+                <button onClick={() => skip(-15)} className="p-2 text-slate-600 hover:text-red-700" title="Back 15 seconds"><RotateCcw className="w-5 h-5" /></button>
                 <button 
                   onClick={togglePlay}
-                  className="w-12 h-12 rounded-full bg-amber-500 hover:bg-amber-400 flex items-center justify-center text-slate-950 font-bold transition shadow-lg shadow-amber-500/20 flex-shrink-0"
+                  className="w-12 h-12 rounded-full bg-red-700 hover:bg-red-800 flex items-center justify-center text-white font-bold transition shadow-lg shadow-red-700/20 flex-shrink-0"
                   title={isPlayingAudio ? 'Pause Narration' : 'Play Narration'}
                 >
                   {isBuffering ? (
@@ -1224,39 +1201,39 @@ export default function BooksemApp() {
                     <Play className="w-5 h-5 ml-0.5" />
                   )}
                 </button>
-                <button onClick={() => skip(15)} className="p-2 text-slate-300 hover:text-amber-400" title="Forward 15 seconds"><RotateCw className="w-5 h-5" /></button>
-                <button onClick={() => goToChapter(chapterIdx + 1)} disabled={chapterIdx >= chapters.length - 1} className="p-2 text-slate-300 hover:text-amber-400 disabled:opacity-30" title="Next chapter"><SkipForward className="w-5 h-5" /></button>
+                <button onClick={() => skip(15)} className="p-2 text-slate-600 hover:text-red-700" title="Forward 15 seconds"><RotateCw className="w-5 h-5" /></button>
+                <button onClick={() => goToChapter(chapterIdx + 1)} disabled={chapterIdx >= chapters.length - 1} className="p-2 text-slate-600 hover:text-red-700 disabled:opacity-30" title="Next chapter"><SkipForward className="w-5 h-5" /></button>
                 <div className="ml-2 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">
+                    <span className="text-[10px] text-red-700 font-bold uppercase tracking-wider">
                       Track {chapterIdx + 1} of {chapters.length}
                     </span>
                     {chapterIdx === 0 && (
-                      <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded font-semibold border border-emerald-500/30">
+                      <span className="text-[9px] bg-emerald-500/20 text-emerald-700 px-1.5 py-0.2 rounded font-semibold border border-emerald-500/30">
                         FREE
                       </span>
                     )}
                   </div>
-                  <p className="text-sm font-semibold text-white truncate max-w-[220px]">{currentChapter ? currentChapter[0] : ''}</p>
+                  <p className="text-sm font-semibold text-[#0C2340] truncate max-w-[220px]">{currentChapter ? currentChapter[0] : ''}</p>
                 </div>
               </div>
 
               {/* Working Scrubber with real dynamic progress */}
               <div className="w-full md:flex-1 max-w-lg flex items-center space-x-3">
-                <span className="text-xs text-slate-400 font-mono w-10 text-right">
+                <span className="text-xs text-slate-500 font-mono w-10 text-right">
                   {formatTime(currentTime)}
                 </span>
                 <div 
                   onClick={handleSeek}
-                  className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden cursor-pointer relative hover:h-3 transition-all"
+                  className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden cursor-pointer relative hover:h-3 transition-all"
                   title="Click anywhere to jump in the audio"
                 >
                   <div 
-                    className="bg-amber-500 h-full transition-[width] duration-150" 
+                    className="bg-red-700 h-full transition-[width] duration-150" 
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
-                <span className="text-xs text-slate-400 font-mono w-10">
+                <span className="text-xs text-slate-500 font-mono w-10">
                   {duration > 0 ? formatTime(duration) : '--:--'}
                 </span>
               </div>
@@ -1264,30 +1241,30 @@ export default function BooksemApp() {
               <div className="flex items-center space-x-2">
                 <button 
                   onClick={toggleSpeed}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition border border-slate-700"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold transition border border-slate-300"
                   title="Click to change playback speed"
                 >
-                  <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+                  <Volume2 className="w-3.5 h-3.5 text-red-700" />
                   <span>{playbackRate}x Speed</span>
                 </button>
-                <button onClick={cycleSleep} className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${sleepMode ? 'bg-amber-500/15 border-amber-500/40 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`} title="Sleep timer">
+                <button onClick={cycleSleep} className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${sleepMode ? 'bg-red-700/15 border-red-700/40 text-red-600' : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'}`} title="Sleep timer">
                   <Moon className="w-3.5 h-3.5" /><span>{sleepLabel}</span>
                 </button>
-                <button onClick={() => setShowChapters(!showChapters)} className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700" title="Chapters">
-                  <List className="w-3.5 h-3.5 text-amber-400" /><span>Chapters</span>
+                <button onClick={() => setShowChapters(!showChapters)} className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold border border-slate-300" title="Chapters">
+                  <List className="w-3.5 h-3.5 text-red-700" /><span>Chapters</span>
                 </button>
               </div>
             </div>
 
             {/* Chapter Selection Drawer */}
             {showChapters && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+              <div className="bg-white/90 border border-slate-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-white flex items-center">
-                    <List className="w-4 h-4 mr-2 text-amber-400" />
+                  <h3 className="text-sm font-bold text-[#0C2340] flex items-center">
+                    <List className="w-4 h-4 mr-2 text-red-700" />
                     Complete Audiobook Tracklist ({chapters.length} Tracks)
                   </h3>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-500">
                     {isBookUnlocked(selectedBookId) ? 'All chapters unlocked' : 'Chapter 1 free preview'}
                   </span>
                 </div>
@@ -1302,22 +1279,22 @@ export default function BooksemApp() {
                         onClick={() => goToChapter(i, true)}
                         className={`w-full text-left px-3 py-2.5 text-sm flex items-center justify-between rounded-lg transition ${
                           isSelected
-                            ? 'bg-amber-500/15 text-amber-300 font-semibold border border-amber-500/30'
-                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                            ? 'bg-red-700/15 text-red-600 font-semibold border border-red-700/30'
+                            : 'text-slate-600 hover:bg-slate-100/80 hover:text-[#0C2340]'
                         }`}
                       >
                         <span className="truncate mr-2 flex items-center gap-1.5">
-                          {isSelected && <Play className="w-3 h-3 fill-amber-400 flex-shrink-0" />}
+                          {isSelected && <Play className="w-3 h-3 fill-red-700 flex-shrink-0" />}
                           <span className="truncate">{c[0]}</span>
                         </span>
                         {isCh1 ? (
-                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-500/15 px-1.5 py-0.5 rounded border border-emerald-500/20">
                             Free
                           </span>
                         ) : !unlocked ? (
                           <Lock className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
                         ) : (
-                          <Check className="w-3.5 h-3.5 text-emerald-400/60 flex-shrink-0" />
+                          <Check className="w-3.5 h-3.5 text-emerald-700/60 flex-shrink-0" />
                         )}
                       </button>
                     );
@@ -1328,25 +1305,25 @@ export default function BooksemApp() {
 
             {/* Book Info and Features */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-1 bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+              <div className="md:col-span-1 bg-white border border-slate-200 rounded-xl p-5 space-y-4">
                 <img 
                   src={selectedBook.cover} 
                   alt={selectedBook.title}
                   className="w-full aspect-[3/4] object-cover rounded-lg shadow-lg"
                 />
                 <div>
-                  <h3 className="font-bold text-white text-lg">{selectedBook.title}</h3>
-                  <p className="text-sm text-slate-400 mb-3">by {selectedBook.author}</p>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-4">{selectedBook.description}</p>
+                  <h3 className="font-bold text-[#0C2340] text-lg">{selectedBook.title}</h3>
+                  <p className="text-sm text-slate-500 mb-3">by {selectedBook.author}</p>
+                  <p className="text-xs text-slate-600 leading-relaxed mb-4">{selectedBook.description}</p>
                   
                   {!isBookUnlocked(selectedBookId) ? (
-                    <div className="pt-3 border-t border-slate-800 space-y-2">
+                    <div className="pt-3 border-t border-slate-200 space-y-2">
                       <button
                         onClick={() => {
                           setPaywallTargetBook(selectedBook);
                           setShowPaywallModal(true);
                         }}
-                        className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow"
+                        className="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow"
                       >
                         <Lock className="w-3.5 h-3.5" /> Unlock Book (${selectedBook.price})
                       </button>
@@ -1355,13 +1332,13 @@ export default function BooksemApp() {
                           setPaywallTargetBook(selectedBook);
                           setShowPaywallModal(true);
                         }}
-                        className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs transition border border-slate-700"
+                        className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-lg text-xs transition border border-slate-300"
                       >
                         All-Access Pass ($9.99/mo)
                       </button>
                     </div>
                   ) : (
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs p-3 rounded-lg flex items-center gap-2">
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 text-xs p-3 rounded-lg flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 flex-shrink-0" />
                       <span>All chapters unlocked for your library.</span>
                     </div>
@@ -1369,12 +1346,12 @@ export default function BooksemApp() {
                 </div>
               </div>
 
-              <div className="md:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
+              <div className="md:col-span-2 bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-white mb-2">Listening Guide & Features</h2>
-                  <p className="text-xs text-slate-400 mb-6">Enjoy continuous uninterrupted playback across all chapters.</p>
+                  <h2 className="text-xl font-bold text-[#0C2340] mb-2">Listening Guide & Features</h2>
+                  <p className="text-xs text-slate-500 mb-6">Enjoy continuous uninterrupted playback across all chapters.</p>
                   
-                  <div className="space-y-4 text-sm text-slate-300 leading-relaxed">
+                  <div className="space-y-4 text-sm text-slate-600 leading-relaxed">
                     <p><strong>Chapter 1 Free Forever:</strong> Listen to the entire first chapter without signing up. Try any book in our catalog risk-free.</p>
                     <p><strong>Binge-Listening Auto-Play:</strong> Unlocked books transition smoothly from chapter to chapter automatically.</p>
                     <p><strong>Bookmark Memory:</strong> Your chapter position and timestamps are automatically saved so you never lose your place.</p>
@@ -1382,7 +1359,7 @@ export default function BooksemApp() {
                   </div>
                 </div>
 
-                <div className="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
+                <div className="mt-8 pt-4 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
                   <span>Source: LibriVox Public Domain Recordings</span>
                   <span>Audio Format: 64kbps MP3</span>
                 </div>
@@ -1394,25 +1371,25 @@ export default function BooksemApp() {
         {/* TAB 3: AUTHOR STUDIO */}
         {activeTab === 'studio' && (
           <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-3xl mx-auto">
-              <h2 className="text-2xl font-bold text-white mb-2">Author Publishing Studio</h2>
-              <p className="text-slate-400 text-sm mb-6">Upload your manuscript or narrate audio directly from your browser to sell on Booksem.</p>
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 max-w-3xl mx-auto">
+              <h2 className="text-2xl font-bold text-[#0C2340] mb-2">Author Publishing Studio</h2>
+              <p className="text-slate-500 text-sm mb-6">Upload your manuscript or narrate audio directly from your browser to sell on Booksem.</p>
               
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Book Title</label>
-                  <input type="text" placeholder="e.g. The Architecture of Mind" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500" />
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">Book Title</label>
+                  <input type="text" placeholder="e.g. The Architecture of Mind" className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-[#0C2340] focus:outline-none focus:border-red-700" />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Genre</label>
-                  <input type="text" placeholder="e.g. Philosophy / Self-Help" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500" />
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">Genre</label>
+                  <input type="text" placeholder="e.g. Philosophy / Self-Help" className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-[#0C2340] focus:outline-none focus:border-red-700" />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Price (USD)</label>
-                  <input type="number" placeholder="4.99" step="0.01" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500" />
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">Price (USD)</label>
+                  <input type="number" placeholder="4.99" step="0.01" className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-[#0C2340] focus:outline-none focus:border-red-700" />
                 </div>
                 <div className="pt-2">
-                  <button onClick={() => alert('Publishing system connects to your author dashboard.')} className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm transition">
+                  <button onClick={() => alert('Publishing system connects to your author dashboard.')} className="w-full py-3 bg-red-700 hover:bg-red-800 text-white font-bold rounded-xl text-sm transition">
                     Submit Manuscript for Review
                   </button>
                 </div>
@@ -1425,7 +1402,7 @@ export default function BooksemApp() {
         {activeTab === 'lounges' && !activeLounge && (
           <div className="space-y-6">
             <div className="text-center max-w-2xl mx-auto">
-              <h2 className="text-3xl font-bold text-white mb-2">Booksem Reading Lounges</h2>
+              <h2 className="text-3xl font-serif font-bold text-[#0C2340] mb-2">Booksem Reading Lounges</h2>
               <p className="text-slate-400">Pick a room, take a seat, and settle in with a book on the subject you love.</p>
             </div>
             <div className="grid sm:grid-cols-2 gap-6">
@@ -1503,22 +1480,22 @@ export default function BooksemApp() {
         {/* TAB 4: LIVE AUTHOR ROOM */}
         {activeTab === 'interview' && (
           <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-3xl mx-auto text-center">
-              <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto mb-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 max-w-3xl mx-auto text-center">
+              <div className="w-16 h-16 rounded-full bg-red-700/10 border border-red-700/30 flex items-center justify-center text-red-700 mx-auto mb-4">
                 <Video className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Live Author Interview Room</h2>
-              <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">
+              <h2 className="text-2xl font-bold text-[#0C2340] mb-2">Live Author Interview Room</h2>
+              <p className="text-slate-500 text-sm max-w-md mx-auto mb-6">
                 Host live broadcast discussions, Q&As, and exclusive readings with authors.
               </p>
-              <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-6 text-left max-w-lg mx-auto">
-                <div className="flex items-center justify-between text-xs text-amber-400 font-semibold mb-2">
+              <div className="bg-white/60 border border-slate-200 rounded-xl p-6 text-left max-w-lg mx-auto">
+                <div className="flex items-center justify-between text-xs text-red-700 font-semibold mb-2">
                   <span>UPCOMING BROADCAST</span>
                   <span>7:00 PM EST</span>
                 </div>
-                <h3 className="font-bold text-white text-base">Stoic Philosophy in Modern Tech</h3>
-                <p className="text-xs text-slate-400 mt-1">Live reading & discussion on Marcus Aurelius with community guest speakers.</p>
-                <button onClick={() => alert('Reminder set!')} className="mt-4 w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition">
+                <h3 className="font-bold text-[#0C2340] text-base">Stoic Philosophy in Modern Tech</h3>
+                <p className="text-xs text-slate-500 mt-1">Live reading & discussion on Marcus Aurelius with community guest speakers.</p>
+                <button onClick={() => alert('Reminder set!')} className="mt-4 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 transition">
                   Remind Me When Live
                 </button>
               </div>
@@ -1530,19 +1507,19 @@ export default function BooksemApp() {
 
       {/* MODAL: UPLOAD WORK */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-white shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 text-[#0C2340] shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold">Publish to Booksem</h3>
-              <button onClick={() => setShowUploadModal(false)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => setShowUploadModal(false)} className="text-slate-500 hover:text-[#0C2340] p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-slate-400 mb-4">Independent authors keep 70% of every sale. Direct audio and e-book distribution.</p>
+            <p className="text-xs text-slate-500 mb-4">Independent authors keep 70% of every sale. Direct audio and e-book distribution.</p>
             <div className="space-y-3">
-              <input type="text" placeholder="Title" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs" />
-              <input type="text" placeholder="Author name" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs" />
-              <button onClick={() => setShowUploadModal(false)} className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg mt-2">
+              <input type="text" placeholder="Title" className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs" />
+              <input type="text" placeholder="Author name" className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs" />
+              <button onClick={() => setShowUploadModal(false)} className="w-full py-2 bg-red-700 hover:bg-red-800 text-white font-bold text-xs rounded-lg mt-2">
                 Continue Setup
               </button>
             </div>
@@ -1552,27 +1529,27 @@ export default function BooksemApp() {
 
       {/* PAYWALL / UNLOCK MODAL */}
       {showPaywallModal && paywallTargetBook && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 text-white shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 text-[#0C2340] shadow-2xl relative">
             <button 
               onClick={() => setShowPaywallModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              className="absolute top-4 right-4 text-slate-500 hover:text-[#0C2340] p-1 rounded-lg hover:bg-slate-100 transition"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="text-center mb-6">
-              <span className="text-[11px] uppercase tracking-wider font-bold bg-amber-500/10 text-amber-400 px-3 py-1 rounded-full border border-amber-500/20 inline-flex items-center gap-1.5">
+              <span className="text-[11px] uppercase tracking-wider font-bold bg-red-700/10 text-red-700 px-3 py-1 rounded-full border border-red-700/20 inline-flex items-center gap-1.5">
                 <Lock className="w-3 h-3" /> Chapter 1 Free Preview Complete
               </span>
-              <h3 className="text-2xl font-bold mt-3 text-white">Unlock Full Audiobook & E-Book</h3>
-              <p className="text-slate-400 text-sm mt-1">
-                Continue reading & listening to <span className="text-amber-400 font-semibold">{paywallTargetBook.title}</span>
+              <h3 className="text-2xl font-bold mt-3 text-[#0C2340]">Unlock Full Audiobook & E-Book</h3>
+              <p className="text-slate-500 text-sm mt-1">
+                Continue reading & listening to <span className="text-red-700 font-semibold">{paywallTargetBook.title}</span>
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 mb-5 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+            <div className="grid grid-cols-3 gap-2 mb-5 bg-white/60 p-1 rounded-xl border border-slate-200">
               {[
                 { key: 'audio', label: '🎧 Audiobook', price: '$' + paywallTargetBook.price },
                 { key: 'paperback', label: '📖 Paperback', price: '$14.99' },
@@ -1581,7 +1558,7 @@ export default function BooksemApp() {
                 <button
                   key={f.key}
                   onClick={() => setPurchaseFormat(f.key)}
-                  className={`py-2 rounded-lg text-xs font-bold transition flex flex-col items-center ${purchaseFormat === f.key ? 'bg-amber-500 text-slate-950 shadow' : 'text-slate-300 hover:bg-slate-800'}`}
+                  className={`py-2 rounded-lg text-xs font-bold transition flex flex-col items-center ${purchaseFormat === f.key ? 'bg-red-700 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}
                 >
                   <span>{f.label}</span>
                   <span className={`text-[11px] font-semibold ${purchaseFormat === f.key ? 'text-slate-900' : 'text-slate-500'}`}>{f.price}</span>
@@ -1592,24 +1569,24 @@ export default function BooksemApp() {
             {purchaseFormat === 'audio' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               {/* Option A: Buy this single book */}
-              <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
+              <div className="bg-white/60 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition">
                 <div>
-                  <div className="text-xs uppercase font-semibold text-slate-400 tracking-wider">A La Carte</div>
-                  <h4 className="font-bold text-white text-base mt-1">Buy This Book</h4>
-                  <div className="text-3xl font-extrabold text-amber-400 mt-2">${paywallTargetBook.price}</div>
-                  <p className="text-xs text-slate-400 mt-1">One-time payment. Permanent lifetime access to all chapters & audio.</p>
+                  <div className="text-xs uppercase font-semibold text-slate-500 tracking-wider">A La Carte</div>
+                  <h4 className="font-bold text-[#0C2340] text-base mt-1">Buy This Book</h4>
+                  <div className="text-3xl font-extrabold text-red-700 mt-2">${paywallTargetBook.price}</div>
+                  <p className="text-xs text-slate-500 mt-1">One-time payment. Permanent lifetime access to all chapters & audio.</p>
                 </div>
                 {STRIPE_SINGLE_BOOK_URLS[paywallTargetBook.id] ? (
                   <button 
                     onClick={() => { window.location.href = STRIPE_SINGLE_BOOK_URLS[paywallTargetBook.id]; }}
-                    className="mt-5 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 rounded-lg shadow transition"
+                    className="mt-5 w-full bg-red-700 hover:bg-red-800 text-white font-bold text-xs py-2.5 rounded-lg shadow transition"
                   >
                     Buy for ${paywallTargetBook.price} (Stripe)
                   </button>
                 ) : (
                   <button 
                     disabled
-                    className="mt-5 w-full bg-slate-800 text-slate-400 font-bold text-xs py-2.5 rounded-lg cursor-not-allowed"
+                    className="mt-5 w-full bg-slate-100 text-slate-500 font-bold text-xs py-2.5 rounded-lg cursor-not-allowed"
                   >
                     Single-book purchase coming soon
                   </button>
@@ -1617,64 +1594,64 @@ export default function BooksemApp() {
               </div>
 
               {/* Option B: All-Access Monthly Pass */}
-              <div className="bg-gradient-to-b from-amber-500/10 via-slate-950/80 to-slate-950/80 border border-amber-500/40 rounded-xl p-4 flex flex-col justify-between relative shadow-lg">
-                <span className="absolute -top-2.5 right-3 bg-amber-500 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
+              <div className="bg-gradient-to-b from-red-700/10 via-white to-white border border-red-700/40 rounded-xl p-4 flex flex-col justify-between relative shadow-lg">
+                <span className="absolute -top-2.5 right-3 bg-red-700 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
                   Best Value
                 </span>
                 <div>
-                  <div className="text-xs uppercase font-semibold text-amber-400 tracking-wider flex items-center gap-1">
+                  <div className="text-xs uppercase font-semibold text-red-700 tracking-wider flex items-center gap-1">
                     <Sparkles className="w-3 h-3" /> Unlimited
                   </div>
-                  <h4 className="font-bold text-white text-base mt-1">All-Access Pass</h4>
-                  <div className="text-3xl font-extrabold text-white mt-2">
-                    $9.99<span className="text-xs font-normal text-slate-400">/mo</span>
+                  <h4 className="font-bold text-[#0C2340] text-base mt-1">All-Access Pass</h4>
+                  <div className="text-3xl font-extrabold text-[#0C2340] mt-2">
+                    $9.99<span className="text-xs font-normal text-slate-500">/mo</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">Unlimited streaming of all 12 complete audiobooks & future releases.</p>
+                  <p className="text-xs text-slate-500 mt-1">Unlimited streaming of all 12 complete audiobooks & future releases.</p>
                 </div>
                 <button 
                   onClick={() => {
                     if (audioRef.current) audioRef.current.pause();
                     window.location.href = STRIPE_ALL_ACCESS_URL;
                   }}
-                  className="mt-5 w-full bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs py-2.5 rounded-lg transition"
+                  className="mt-5 w-full bg-white hover:bg-slate-200 text-white font-bold text-xs py-2.5 rounded-lg transition"
                 >
                   Pay with Stripe ($9.99/mo)
                 </button>
               </div>
             </div>
             ) : (
-            <div className="mb-6 bg-slate-950/60 border border-slate-800 rounded-xl p-5">
+            <div className="mb-6 bg-white/60 border border-slate-200 rounded-xl p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-xs uppercase font-semibold text-slate-400 tracking-wider">{purchaseFormat === 'paperback' ? 'Paperback Edition' : 'Hardcover Edition'}</div>
-                  <h4 className="font-bold text-white text-base mt-1">{paywallTargetBook.title}</h4>
-                  <p className="text-xs text-slate-400">by {paywallTargetBook.author}</p>
+                  <div className="text-xs uppercase font-semibold text-slate-500 tracking-wider">{purchaseFormat === 'paperback' ? 'Paperback Edition' : 'Hardcover Edition'}</div>
+                  <h4 className="font-bold text-[#0C2340] text-base mt-1">{paywallTargetBook.title}</h4>
+                  <p className="text-xs text-slate-500">by {paywallTargetBook.author}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-extrabold text-amber-400">{purchaseFormat === 'paperback' ? '$14.99' : '$24.99'}</div>
+                  <div className="text-3xl font-extrabold text-red-700">{purchaseFormat === 'paperback' ? '$14.99' : '$24.99'}</div>
                   <div className="text-[11px] text-slate-500">+ shipping</div>
                 </div>
               </div>
-              <p className="text-xs text-slate-400 mt-3">
+              <p className="text-xs text-slate-500 mt-3">
                 {purchaseFormat === 'paperback'
                   ? 'Classic softcover print edition, delivered to your door.'
                   : 'Premium hardbound edition — perfect for collectors and gifts.'}
               </p>
-              <div className="mt-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-xs text-emerald-300">
+              <div className="mt-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-xs text-emerald-700">
                 📦 Ships directly from independent bookstore partners. Tracked delivery within 3–5 business days.
               </div>
               <button
                 disabled
-                className="mt-4 w-full bg-slate-800 text-slate-400 font-bold text-xs py-2.5 rounded-lg cursor-not-allowed"
+                className="mt-4 w-full bg-slate-100 text-slate-500 font-bold text-xs py-2.5 rounded-lg cursor-not-allowed"
               >
                 Print editions coming soon
               </button>
             </div>
             )}
 
-            <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+            <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-[11px] text-slate-500">
               <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Secure 256-bit checkout
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" /> Secure 256-bit checkout
               </span>
               <span className="text-slate-500">Cancel pass anytime</span>
             </div>
@@ -1684,30 +1661,30 @@ export default function BooksemApp() {
 
       {/* ACCOUNT / AUTH MODAL */}
       {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 text-white shadow-2xl relative">
-            <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" aria-label="Close">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-md p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-sm w-full p-6 text-[#0C2340] shadow-2xl relative">
+            <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-[#0C2340] p-1 rounded-lg hover:bg-slate-100 transition" aria-label="Close">
               <X className="w-5 h-5" />
             </button>
             <h3 className="text-xl font-bold">{authMode === 'signup' ? 'Create your free account' : 'Welcome back'}</h3>
-            <p className="text-slate-400 text-xs mt-1 mb-5">
+            <p className="text-slate-500 text-xs mt-1 mb-5">
               {authMode === 'signup' ? 'Save your purchases and listen on any device.' : 'Sign in to access your saved books.'}
             </p>
-            <div className="grid grid-cols-2 gap-2 mb-5 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+            <div className="grid grid-cols-2 gap-2 mb-5 bg-white/60 p-1 rounded-xl border border-slate-200">
               {['signin', 'signup'].map((m) => (
                 <button key={m} onClick={() => { setAuthMode(m); setAuthError(''); }}
-                  className={`py-2 rounded-lg text-xs font-bold transition ${authMode === m ? 'bg-amber-500 text-slate-950 shadow' : 'text-slate-300 hover:bg-slate-800'}`}>
+                  className={`py-2 rounded-lg text-xs font-bold transition ${authMode === m ? 'bg-red-700 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}>
                   {m === 'signin' ? 'Sign In' : 'Sign Up'}
                 </button>
               ))}
             </div>
             <form onSubmit={handleAuthSubmit} className="space-y-3">
-              <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="Email address" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs" />
-              <input type="password" required minLength={6} value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} placeholder="Password (6+ characters)" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs" />
+              <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="Email address" className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-xs" />
+              <input type="password" required minLength={6} value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} placeholder="Password (6+ characters)" className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-xs" />
               {authError && (
                 <div className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2">{authError}</div>
               )}
-              <button type="submit" disabled={authBusy} className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg disabled:opacity-60 flex items-center justify-center gap-2">
+              <button type="submit" disabled={authBusy} className="w-full py-2.5 bg-red-700 hover:bg-red-800 text-white font-bold text-xs rounded-lg disabled:opacity-60 flex items-center justify-center gap-2">
                 {authBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 {authBusy ? 'Please wait…' : (authMode === 'signup' ? 'Create Account' : 'Sign In')}
               </button>
@@ -1717,13 +1694,42 @@ export default function BooksemApp() {
       )}
 
       {/* 4. FOOTER */}
-      <footer className="border-t border-slate-800 bg-slate-950 py-8 mt-12">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© 2026 Booksem.com — A Partner Platform of MiyTube.</p>
-          <div className="flex space-x-6">
-            <span className="hover:text-slate-400 cursor-pointer">Terms of Service</span>
-            <span className="hover:text-slate-400 cursor-pointer">Privacy Policy</span>
-            <span className="hover:text-slate-400 cursor-pointer">Author Program</span>
+      {/* FOOTER */}
+      <footer className="bg-[#0C2340] text-slate-300 mt-12">
+        <div className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-xs">
+          <div>
+            <p className="text-2xl font-serif font-black text-white">Booksem<span className="text-[#F2A900]">!</span></p>
+            <p className="mt-2 leading-relaxed">Your online bookstore for audiobooks, reading lounges and live author events.</p>
+          </div>
+          <div>
+            <p className="font-bold text-white uppercase tracking-wide mb-3">Shop</p>
+            <ul className="space-y-2">
+              <li><button onClick={() => goShop('all-books')} className="hover:text-white">All Books</button></li>
+              <li><button onClick={() => goShop('best-sellers')} className="hover:text-white">Best Sellers</button></li>
+              <li><button onClick={() => goShop('audio-dramas')} className="hover:text-white">Audio Dramas</button></li>
+              <li><a href={STRIPE_ALL_ACCESS_URL} className="hover:text-white">Reader’s Club</a></li>
+            </ul>
+          </div>
+          <div>
+            <p className="font-bold text-white uppercase tracking-wide mb-3">Experience</p>
+            <ul className="space-y-2">
+              <li><button onClick={() => { setActiveTab('lounges'); setActiveLounge(null); }} className="hover:text-white">Reading Lounges</button></li>
+              <li><button onClick={() => setActiveTab('reader')} className="hover:text-white">Listen & Read</button></li>
+              <li><button onClick={() => setActiveTab('interview')} className="hover:text-white">Live Author Room</button></li>
+            </ul>
+          </div>
+          <div>
+            <p className="font-bold text-white uppercase tracking-wide mb-3">Authors</p>
+            <ul className="space-y-2">
+              <li><button onClick={() => setActiveTab('studio')} className="hover:text-white">Author Studio</button></li>
+              <li><button onClick={() => setShowUploadModal(true)} className="hover:text-white">Publish Your Work</button></li>
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-white/10">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between gap-2 text-[11px] text-slate-400">
+            <p>© 2026 Booksem.com — A Partner Platform of MiyTube.</p>
+            <p>Terms of Service · Privacy Policy</p>
           </div>
         </div>
       </footer>
