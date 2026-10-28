@@ -942,6 +942,11 @@ export default function BooksemApp() {
 
   return (
     <div className="min-h-screen bg-[#F4F4F2] text-slate-800 flex flex-col font-sans">
+      {/* PARTNER NETWORK BAR */}
+      <div className="bg-black text-slate-200 text-[11px] text-center py-1.5 px-4">
+        Looking for decentralized workforce &amp; Web3 solutions?{' '}
+        <a href="https://workforcecoin.io/?utm_source=booksem&utm_medium=referral&utm_campaign=crypto_traffic" target="_blank" rel="noopener" className="font-bold text-[#F2A900] hover:underline">Visit our partner network at WorkforceCoin.io →</a>
+      </div>
       {/* PROMO BAR */}
       <div className="bg-[#B4121B] text-white text-xs font-semibold text-center py-2 px-4">
         {hasMonthlyPass ? '★ Reader\u2019s Club Member — unlimited listening is active' : (
@@ -1729,6 +1734,7 @@ export default function BooksemApp() {
         <div className="border-t border-white/10">
           <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between gap-2 text-[11px] text-slate-400">
             <p>© 2026 Booksem.com — A Partner Platform of MiyTube.</p>
+            <p>Our Network: <a href="https://miytube.com/?utm_source=booksem&utm_medium=referral&utm_campaign=footer" target="_blank" rel="noopener" className="hover:text-white underline">MiyTube.com</a> · <a href="https://workforcecoin.io/?utm_source=booksem&utm_medium=referral&utm_campaign=footer" target="_blank" rel="noopener" className="hover:text-white underline">WorkforceCoin.io</a> · Booksem.com</p>
             <p>Terms of Service · Privacy Policy</p>
           </div>
         </div>
