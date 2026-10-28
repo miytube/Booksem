@@ -943,7 +943,7 @@ export default function BooksemApp() {
   return (
     <div className="min-h-screen bg-[#F4F4F2] text-slate-800 flex flex-col font-sans">
       {/* PARTNER NETWORK BAR */}
-      <div className="bg-black text-slate-200 text-[11px] text-center py-1.5 px-4">
+      <div className="bg-black text-slate-200 text-sm md:text-base text-center py-2.5 px-4">
         Looking for decentralized workforce &amp; Web3 solutions?{' '}
         <a href="https://workforcecoin.io/?utm_source=booksem&utm_medium=referral&utm_campaign=crypto_traffic" target="_blank" rel="noopener" className="font-bold text-[#F2A900] hover:underline">Visit our partner network at WorkforceCoin.io →</a>
       </div>
