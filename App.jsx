@@ -68,9 +68,39 @@ function useAmbience() {
   return { kind, start, stop };
 }
 
+
+// ============= MAGAZINES & ARTICLES (v13) =============
+const MAGAZINE_ISSUES = [
+  { id: 'mag-strategy-1', title: 'Strategy & Leadership', issue: 'Issue No. 1 · Winter 2026', price: 3.99, gradient: 'from-[#0C2340] to-[#16365E]', accent: '#F2A900', tag: 'Business',
+    blurb: 'Timeless lessons in command, negotiation and decision-making — from Sun Tzu to the modern boardroom.',
+    contents: ['The Art of War for Founders', 'Why Great Leaders Read History', 'Negotiation Without Surrender', 'Five Decisions That Shaped Empires', 'Book Picks: The Strategist’s Shelf'] },
+  { id: 'mag-web3-1', title: 'Web3 & The Future of Work', issue: 'Issue No. 1 · Winter 2026', price: 4.99, gradient: 'from-black to-[#2a2a2a]', accent: '#F2A900', tag: 'Web3 / Crypto',
+    blurb: 'Decentralized workforces, digital ownership and how blockchain is reshaping the way people earn.',
+    contents: ['The Decentralized Workforce, Explained', 'From Gig Economy to Token Economy', 'Reading the Whitepaper: A Beginner’s Guide', 'Spotlight: WorkforceCoin.io', 'Book Picks: Money, Code & Trust'] },
+  { id: 'mag-classics-1', title: 'Literary Classics Quarterly', issue: 'Issue No. 1 · Winter 2026', price: 2.99, gradient: 'from-[#5A0E12] to-[#B4121B]', accent: '#FCE7B2', tag: 'Literature',
+    blurb: 'Why the classics still matter — essays, character studies and reading guides for curious minds.',
+    contents: ['Homer to Hemingway: The Hero’s Journey', 'Rediscovering Jane Austen', 'The Short Story Masters', 'How to Read a Classic in 30 Days', 'Book Picks: Start Here'] },
+];
+
+const ARTICLES = [
+  { id: 'art-war-today', title: 'What The Art of War Still Teaches Us in 2026', author: 'Booksem Editors', minutes: 6, tag: 'Strategy', mag: 'mag-strategy-1',
+    body: ['Written roughly 2,500 years ago, Sun Tzu’s The Art of War remains one of the most-read books on strategy in the world. Its staying power comes from a simple idea: the best victory is the one won before the battle begins.', 'For modern readers, that means preparation, knowing your strengths and weaknesses, and understanding the people across the table. Business leaders, coaches and negotiators return to it again and again for exactly this reason.', 'Read slowly. Each short chapter rewards a second pass, and the lessons apply as easily to a career decision as to a campaign.'] },
+  { id: 'art-decentral-work', title: 'The Decentralized Workforce: A Plain-English Guide', author: 'Booksem Editors', minutes: 7, tag: 'Web3', mag: 'mag-web3-1',
+    body: ['A decentralized workforce is a group of people who collaborate and get paid through open networks rather than a single company payroll. Blockchain technology makes it possible to record work and payments transparently.', 'Supporters say it opens global opportunity to anyone with an internet connection. Skeptics point to volatility and the need for clear rules. Both views are worth understanding before you dive in.', 'If you want to explore one project building in this space, visit our partner network at WorkforceCoin.io.'],
+    cta: { label: 'Explore WorkforceCoin.io →', href: 'https://workforcecoin.io/?utm_source=booksem&utm_medium=referral&utm_campaign=article' } },
+  { id: 'art-classics-start', title: 'Never Read a Classic? Start With These Five', author: 'Booksem Editors', minutes: 5, tag: 'Literature', mag: 'mag-classics-1',
+    body: ['Classics can feel intimidating, but many are shorter and livelier than their reputation suggests. The trick is choosing the right first book.', 'Begin with a story-driven novel, pair it with an audiobook so you can listen on the go, and give yourself permission to skim the slow parts. Momentum matters more than perfection.', 'Our Literary Classics Quarterly includes a complete 30-day reading plan to help you finish your first classic.'] },
+  { id: 'art-audio-habit', title: 'How Audiobooks Help You Read 20 More Books a Year', author: 'Booksem Editors', minutes: 4, tag: 'Reading Life',
+    body: ['Commutes, workouts and chores add up to hours each week. Turning that time into listening time is the easiest way to read more without changing your schedule.', 'Start at normal speed, then nudge it up as you get comfortable. Many listeners settle around 1.25x without losing comprehension.', 'Booksem’s free full-cast audio dramas are a great place to build the habit.'] },
+  { id: 'art-leaders-read', title: 'Why the Best Leaders Are Always Reading', author: 'Booksem Editors', minutes: 5, tag: 'Leadership', mag: 'mag-strategy-1',
+    body: ['Reading lets you borrow decades of experience in a few hours. Leaders who read widely tend to spot patterns earlier and make calmer decisions.', 'History, biography and fiction each build a different muscle: perspective, judgment and empathy.', 'Try one book outside your usual genre each month and notice how your thinking changes.'] },
+];
+
 export default function BooksemApp() {
   const [activeTab, setActiveTab] = useState('marketplace');
   const [activeLounge, setActiveLounge] = useState(null);
+  const [activeIssue, setActiveIssue] = useState(null);
+  const [activeArticle, setActiveArticle] = useState(null);
   const ambience = useAmbience();
   const [loungeNotes, setLoungeNotes] = useState(() => { try { return JSON.parse(localStorage.getItem('booksem_lounge_notes') || '{}'); } catch (_) { return {}; } });
   const [noteDraft, setNoteDraft] = useState('');
@@ -935,6 +965,8 @@ export default function BooksemApp() {
     { label: 'Best Sellers', on: () => goShop('best-sellers'), active: activeTab === 'marketplace' && shopDept === 'best-sellers' },
     { label: 'Audio Dramas', on: () => goShop('audio-dramas'), active: activeTab === 'marketplace' && shopDept === 'audio-dramas' },
     { label: 'Reading Lounges', on: () => { setActiveTab('lounges'); setActiveLounge(null); }, active: activeTab === 'lounges' },
+    { label: 'Magazines', on: () => { setActiveTab('magazines'); setActiveIssue(null); window.scrollTo({ top: 0 }); }, active: activeTab === 'magazines' },
+    { label: 'Articles', on: () => { setActiveTab('articles'); setActiveArticle(null); window.scrollTo({ top: 0 }); }, active: activeTab === 'articles' },
     { label: 'Listen & Read', on: () => setActiveTab('reader'), active: activeTab === 'reader' },
     { label: 'Author Studio', on: () => setActiveTab('studio'), active: activeTab === 'studio' },
     { label: 'Live Author Room', on: () => setActiveTab('interview'), active: activeTab === 'interview' },
@@ -1402,6 +1434,127 @@ export default function BooksemApp() {
             </div>
           </div>
         )}
+
+        {/* TAB: MAGAZINES */}
+        {activeTab === 'magazines' && !activeIssue && (
+          <div className="space-y-6">
+            <div className="border-b-2 border-[#0C2340] pb-2">
+              <h2 className="text-2xl font-serif font-bold text-[#0C2340]">Magazines &amp; Periodicals</h2>
+              <p className="text-sm text-slate-500">New issues from Booksem — buy a single issue or read every issue with the Reader’s Club.</p>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {MAGAZINE_ISSUES.map(m => (
+                <div key={m.id} className="bg-white shadow-sm border border-slate-200 flex flex-col">
+                  <button onClick={() => { setActiveIssue(m.id); window.scrollTo({ top: 0 }); }} className={`aspect-[3/4] bg-gradient-to-br ${m.gradient} text-white p-6 flex flex-col text-left`}>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: m.accent }}>Booksem Magazine</span>
+                    <span className="mt-3 text-3xl font-serif font-black leading-tight">{m.title}</span>
+                    <span className="mt-2 text-xs text-slate-300">{m.issue}</span>
+                    <ul className="mt-auto space-y-1 text-xs text-slate-200">{m.contents.slice(0, 3).map(c => <li key={c}>• {c}</li>)}</ul>
+                  </button>
+                  <div className="p-4 flex flex-col gap-3 flex-1">
+                    <span className="self-start text-[10px] font-bold uppercase bg-[#F4F4F2] text-[#0C2340] px-2 py-0.5">{m.tag}</span>
+                    <p className="text-sm text-slate-600 flex-1">{m.blurb}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[#B4121B]">{hasMonthlyPass ? 'Included' : `$${m.price.toFixed(2)}`}</span>
+                      <button onClick={() => { setActiveIssue(m.id); window.scrollTo({ top: 0 }); }} className="bg-[#0C2340] hover:bg-[#16365E] text-white text-xs font-bold px-4 py-2">View Issue</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'magazines' && activeIssue && (() => {
+          const m = MAGAZINE_ISSUES.find(x => x.id === activeIssue);
+          if (!m) return null;
+          const related = ARTICLES.filter(a => a.mag === m.id);
+          return (
+            <div className="max-w-4xl mx-auto space-y-6">
+              <button onClick={() => setActiveIssue(null)} className="text-sm text-[#0C2340] font-semibold hover:underline">← All Magazines</button>
+              <div className={`bg-gradient-to-br ${m.gradient} text-white p-8`}>
+                <span className="text-xs font-bold uppercase tracking-[0.3em]" style={{ color: m.accent }}>Booksem Magazine · {m.issue}</span>
+                <h2 className="text-4xl font-serif font-black mt-2">{m.title}</h2>
+                <p className="mt-3 text-slate-200 max-w-2xl">{m.blurb}</p>
+              </div>
+              <div className="bg-white border border-slate-200 p-6">
+                <h3 className="font-serif text-xl font-bold text-[#0C2340] mb-3">In This Issue</h3>
+                <ol className="space-y-2">
+                  {m.contents.map((c, i) => (
+                    <li key={c} className="flex items-center justify-between border-b border-slate-100 pb-2 text-sm">
+                      <span><span className="text-slate-400 mr-3">{String(i + 1).padStart(2, '0')}</span>{c}</span>
+                      <span className="text-xs font-bold text-slate-400">{hasMonthlyPass || i === 0 ? 'READ' : 'LOCKED'}</span>
+                    </li>
+                  ))}
+                </ol>
+                {!hasMonthlyPass && (
+                  <div className="mt-6 bg-[#F4F4F2] p-5 text-center">
+                    <p className="text-sm text-slate-700 mb-3">Unlock the full issue for ${m.price.toFixed(2)}, or read every issue with the Reader’s Club.</p>
+                    <button onClick={() => { setPaywallTargetBook(selectedBook); setShowPaywallModal(true); }} className="bg-[#B4121B] hover:bg-[#8F0E15] text-white text-sm font-bold px-6 py-2.5">Join the Reader’s Club — $9.99/mo</button>
+                  </div>
+                )}
+              </div>
+              {related.length > 0 && (
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-[#0C2340] mb-3">Free Preview Articles</h3>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {related.map(a => (
+                      <button key={a.id} onClick={() => { setActiveTab('articles'); setActiveArticle(a.id); window.scrollTo({ top: 0 }); }} className="text-left bg-white border border-slate-200 p-4 hover:border-[#0C2340]">
+                        <span className="text-[10px] font-bold uppercase text-[#B4121B]">{a.tag}</span>
+                        <p className="font-serif font-bold text-[#0C2340] mt-1">{a.title}</p>
+                        <p className="text-xs text-slate-400 mt-1">{a.minutes} min read</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* TAB: ARTICLES — THE BOOKSEM REVIEW */}
+        {activeTab === 'articles' && !activeArticle && (
+          <div className="space-y-6">
+            <div className="border-b-2 border-[#0C2340] pb-2">
+              <h2 className="text-2xl font-serif font-bold text-[#0C2340]">The Booksem Review</h2>
+              <p className="text-sm text-slate-500">Free essays, reading guides and ideas worth your time.</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-5">
+              {ARTICLES.map((a, i) => (
+                <button key={a.id} onClick={() => { setActiveArticle(a.id); window.scrollTo({ top: 0 }); }} className={`text-left bg-white border border-slate-200 p-6 hover:border-[#0C2340] transition ${i === 0 ? 'md:col-span-2' : ''}`}>
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-[#B4121B]">{a.tag}</span>
+                  <h3 className={`font-serif font-bold text-[#0C2340] mt-1 ${i === 0 ? 'text-3xl' : 'text-xl'}`}>{a.title}</h3>
+                  <p className="text-sm text-slate-600 mt-2 line-clamp-2">{a.body[0]}</p>
+                  <p className="text-xs text-slate-400 mt-3">By {a.author} · {a.minutes} min read</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'articles' && activeArticle && (() => {
+          const a = ARTICLES.find(x => x.id === activeArticle);
+          if (!a) return null;
+          const mag = MAGAZINE_ISSUES.find(m => m.id === a.mag);
+          return (
+            <article className="max-w-2xl mx-auto bg-white border border-slate-200 p-8 sm:p-10">
+              <button onClick={() => setActiveArticle(null)} className="text-sm text-[#0C2340] font-semibold hover:underline mb-6">← The Booksem Review</button>
+              <span className="block text-xs font-bold uppercase tracking-wide text-[#B4121B]">{a.tag}</span>
+              <h1 className="text-3xl sm:text-4xl font-serif font-black text-[#0C2340] mt-2 leading-tight">{a.title}</h1>
+              <p className="text-sm text-slate-400 mt-3 mb-8">By {a.author} · {a.minutes} min read</p>
+              <div className="space-y-5 text-lg leading-relaxed text-slate-700 font-serif">
+                {a.body.map((p, i) => <p key={i}>{p}</p>)}
+              </div>
+              {a.cta && <a href={a.cta.href} target="_blank" rel="noopener" className="inline-block mt-8 bg-black text-[#F2A900] font-bold px-5 py-3">{a.cta.label}</a>}
+              {mag && (
+                <div className="mt-10 border-t-2 border-[#0C2340] pt-6">
+                  <p className="text-sm text-slate-600">Want more? Read the complete issue of <strong>{mag.title}</strong> in Booksem Magazine.</p>
+                  <button onClick={() => { setActiveTab('magazines'); setActiveIssue(mag.id); window.scrollTo({ top: 0 }); }} className="mt-3 bg-[#0C2340] hover:bg-[#16365E] text-white text-sm font-bold px-5 py-2.5">Open the Magazine →</button>
+                </div>
+              )}
+            </article>
+          );
+        })()}
 
         {/* TAB: READING LOUNGES */}
         {activeTab === 'lounges' && !activeLounge && (
